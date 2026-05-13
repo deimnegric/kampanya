@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kampanya Talep Otomasyonu v18</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px 10px; color: #1e293b; }
+        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+        h2 { color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 20px 0; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: #475569; font-size: 13px; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f8fafc; transition: all 0.2s; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; background-color: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        textarea { resize: vertical; min-height: 100px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media(min-width: 768px) {
+            .grid-4 { grid-template-columns: 2fr 1fr 1fr 1fr; gap: 16px; }
+            body { padding: 40px 20px; }
+            .container { padding: 32px; }
+            h2 { font-size: 24px; text-align: left; }
+        }
+        .btn-add { background-color: #0f172a; color: white; width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 8px; font-size: 14px; }
+        .btn-add:hover { background-color: #1e293b; }
+        .preview-area { margin-top: 30px; overflow-x: auto; }
+        h3 { color: #334155; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+        
+        /* Web Önizleme Tablosu */
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); min-width: 750px; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px 18px; text-align: left; vertical-align: middle; }
+        th { background-color: #334155; color: #ffffff; font-weight: 600; font-size: 14px; border-bottom: 3px solid #1e293b; }
+        
+        .col-fixed { color: #1e293b; font-weight: 500; }
+        .col-dark-price { color: #000000; font-weight: 700; background-color: #ffffff; }
+        .col-ratio-yellow { background-color: #fef08a !important; color: #854d0e; font-weight: 700; text-align: center; }
+        .text-center { text-align: center; }
+        
+        tr:hover { background-color: #f1f5f9; }
+        .spacer-row { background-color: #ffffff; height: 26px; }
+        .spacer-row td { border: 1px solid #cbd5e1; }
+        
+        .btn-group { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 24px; }
+        @media(min-width: 500px) {
+            .btn-group { flex-direction: row; }
+        }
+        .btn-action { flex: 1; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 14px; text-align: center; text-decoration: none; }
+        .btn-download { background-color: #10b981; color: white; }
+        .btn-download:hover { background-color: #059669; }
+        .btn-mail { background-color: #3b82f6; color: white; }
+        .btn-mail:hover { background-color: #2563eb; }
+        .email-info { font-size: 12px; color: #64748b; margin-top: 12px; text-align: center; width: 100%; }
+        @media(min-width: 768px) { .email-info { text-align: right; } }
+        .email-edit-link { color: #3b82f6; text-decoration: none; font-weight: 600; cursor: pointer; margin-left: 5px; }
+        .email-edit-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📊 Kampanya Giriş Paneli</h2>
+    
+    <div class="form-group">
+        <label for="rawInput">Ürün Listesi</label>
+        <textarea id="rawInput" placeholder="0201013 altın süt 59,50&#10;0200607 günlük süt 55"></textarea>
+    </div>
+    
+    <div class="grid-4">
+        <div class="form-group">
+            <label for="stores">Mağaza Adı (Virgül ile ayırabilirsiniz)</label>
+            <input type="text" id="stores" placeholder="Örn: atatürk cd, altıyol">
+        </div>
+        <div class="form-group">
+            <label for="discountType">İndirim Tipi</label>
+            <select id="discountType">
+                <option value="percent">Oran (%)</option>
+                <option value="price">Fiyat (TL)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="discountValue">Değer</label>
+            <input type="text" id="discountValue" placeholder="Örn: 27">
+        </div>
+        <div class="form-group">
+            <label for="quantity">Adet</label>
+            <input type="text" id="quantity" placeholder="Örn: 45">
+        </div>
+    </div>
+
+    <button class="btn-add" onclick="addStoreBlock()">Listeye Ekle</button>
+
+    <div class="preview-area">
+        <h3>Tablo Önizleme</h3>
+        <table id="excelTable">
+            <thead>
+                <tr>
+                    <th>Mağaza Adı</th>
+                    <th>Ürün Kodu</th>
+                    <th>Ürün Adı</th>
+                    <th class="text-center">Adet</th>
+                    <th>Fiyat</th>
+                    <th>Kamp. Fiyat</th>
+                    <th style="text-align: center;">Oran</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div>
+        <div class="btn-group">
+            <button class="btn-action btn-download" onclick="exportStyledExcelWithGridlines(true)">Excel Olarak İndir</button>
+            <button class="btn-action btn-mail" onclick="shareOrMailExcel()">Kampanyayı Gönder</button>
+        </div>
+        <div class="email-info">
+            Alıcı: <span id="currentEmailDisplay">bolgesorumlusu@firma.com</span> 
+            [<span class="email-edit-link" onclick="editEmailAddress()">Alıcıyı Düzenle</span>]
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tarayıcı hafızasında kayıtlı e-posta var mı bak, yoksa varsayılanı kullan
+    let targetEmailAddress = localStorage.getItem('savedEmailAddress') || "bolgesorumlusu@firma.com";
+    let allStoreBlocks = [];
+
+    // Sayfa yüklendiğinde hafızadaki güncel e-postayı ekrana yazdır
+    document.getElementById('currentEmailDisplay').innerText = targetEmailAddress;
+
+    function parseInputLine(text) {
+        if (!text.trim()) return null;
+        let parts = text.trim().split(/\s+/);
+        if (parts.length < 3) return null;
+
+        let rawPrice = parts[parts.length - 1].replace(',', '.');
+        let price = parseFloat(rawPrice);
+        if (isNaN(price)) price = parts[parts.length - 1];
+
+        let code = parts[0];
+        let name = parts.slice(1, parts.length - 1).join(" ");
+
+        if (isNaN(code)) {
+            code = parts[parts.length - 2];
+            name = parts.slice(0, parts.length - 2).join(" ");
+            if(isNaN(code)) {
+                code = "-";
+                name = parts.slice(0, parts.length - 1).join(" ");
+            }
+        }
+
+        return { code, name, price };
+    }
+
+    function formatPriceDisplay(num) {
+        if (num % 1 === 0) return num.toString();
+        if ((num * 2) % 1 === 0) return num.toFixed(1).replace('.', ',');
+        return Math.round(num).toString();
+    }
+
+    function calculateDiscount(normalPrice, type, val) {
+        if (!val || isNaN(normalPrice)) return { price: "-", ratio: "-" };
+        let numericVal = parseFloat(val.replace(',', '.'));
+        if (isNaN(numericVal)) return { price: val, ratio: "-" };
+
+        let finalPrice = normalPrice;
+        let ratioDisplay = "";
+
+        if (type === 'percent') {
+            let discountAmount = (normalPrice * numericVal) / 100;
+            finalPrice = normalPrice - discountAmount;
+            
+            let remainder = finalPrice % 1;
+            if (Math.abs(remainder - 0.5) > 0.001 && Math.abs(remainder - (-0.5)) > 0.001) {
+                finalPrice = Math.round(finalPrice);
+            }
+            ratioDisplay = numericVal + "%";
+        } else {
+            finalPrice = numericVal;
+            if(normalPrice > 0) {
+                let diff = normalPrice - finalPrice;
+                let calculatedRatio = Math.round((diff / normalPrice) * 100);
+                ratioDisplay = calculatedRatio > 0 ? calculatedRatio + "%" : "0%";
+            } else {
+                ratioDisplay = "-";
+            }
+        }
+
+        return {
+            price: formatPriceDisplay(finalPrice) + " TL",
+            ratio: ratioDisplay
+        };
+    }
+
+    function addStoreBlock() {
+        let rawInputText = document.getElementById('rawInput').value;
+        let storesInput = document.getElementById('stores').value;
+        let discountType = document.getElementById('discountType').value;
+        let discountValue = document.getElementById('discountValue').value;
+        let quantity = document.getElementById('quantity').value;
+
+        let storeList = storesInput.split(',').map(s => s.trim()).filter(s => s !== "");
+        if (storeList.length === 0) storeList = ["-"];
+
+        let lines = rawInputText.split('\n');
+        let products = [];
+
+        lines.forEach(line => {
+            let parsed = parseInputLine(line);
+            if (parsed) {
+                let discountResult = calculateDiscount(parsed.price, discountType, discountValue);
+                let displayNormal = typeof parsed.price === 'number' ? formatPriceDisplay(parsed.price) + " TL" : parsed.price;
+                
+                products.push({
+                    code: parsed.code,
+                    name: parsed.name,
+                    normalPrice: displayNormal,
+                    discountPrice: discountResult.price,
+                    ratio: discountResult.ratio,
+                    quantity: quantity || "-"
+                });
+            }
+        });
+
+        if (products.length === 0) {
+            alert("Lütfen geçerli ürün listesi girin.");
+            return;
+        }
+
+        storeList.forEach(store => {
+            allStoreBlocks.push({
+                storeName: store,
+                productList: products
+            });
+        });
+
+        updateTable();
+        
+        document.getElementById('rawInput').value = "";
+        document.getElementById('stores').value = "";
+        document.getElementById('discountValue').value = "";
+        document.getElementById('quantity').value = "";
+    }
+
+    function updateTable() {
+        let tbody = document.querySelector('#excelTable tbody');
+        tbody.innerHTML = "";
+
+        allStoreBlocks.forEach((block, blockIndex) => {
+            block.productList.forEach((prod, prodIndex) => {
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="col-fixed"><strong>${prodIndex === 0 ? block.storeName : ""}</strong></td>
+                    <td class="col-fixed">${prod.code}</td>
+                    <td class="col-fixed">${prod.name}</td>
+                    <td class="text-center">${prod.quantity}</td>
+                    <td class="col-dark-price">${prod.normalPrice}</td>
+                    <td class="col-dark-price">${prod.discountPrice}</td>
+                    <td class="col-ratio-yellow">${prod.ratio}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (blockIndex < allStoreBlocks.length - 1) {
+                for(let i=0; i<2; i++) {
+                    let emptyRow = document.createElement('tr');
+                    emptyRow.className = "spacer-row";
+                    emptyRow.innerHTML = "<td colspan='7'></td>";
+                    tbody.appendChild(emptyRow);
+                }
+            }
+        });
+    }
+
+    function editEmailAddress() {
+        let newEmail = prompt("Yeni alıcı e-posta adresini girin:", targetEmailAddress);
+        if (newEmail !== null && newEmail.trim() !== "") {
+            targetEmailAddress = newEmail.trim();
+            document.getElementById('currentEmailDisplay').innerText = targetEmailAddress;
+            // Yeni e-postayı tarayıcı hafızasına kaydet
+            localStorage.setItem('savedEmailAddress', targetEmailAddress);
+        }
+    }
+
+    function exportStyledExcelWithGridlines(triggerDownload) {
+        if (allStoreBlocks.length === 0) {
+            alert("Listede veri bulunamadı.");
+            return null;
+        }
+
+        let tableHtml = `
+            <table border="1" style="border-collapse:collapse; font-family:'Segoe UI',Arial,sans-serif;">
+                <colgroup>
+                    <col width="160">
+                    <col width="110">
+                    <col width="220">
+                    <col width="80">
+                    <col width="100">
+                    <col width="110">
+                    <col width="80">
+                </colgroup>
+                <thead>
+                    <tr style="background-color: #334155; color: #FFFFFF; font-weight: bold;" height="40">
+                        <th style="border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:11pt;">Mağaza Adı</div></th>
+                        <th style="border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:11pt;">Ürün Kodu</div></th>
+                        <th style="border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:11pt;">Ürün Adı</div></th>
+                        <th style="border: 1px solid #cbd5e1; text-align: center; vertical-align: middle; mso-number-format:'\\@';"><div style="font-size:11pt;">Adet</div></th>
+                        <th style="border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:11pt;">Fiyat</div></th>
+                        <th style="border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:11pt;">Camp. Fiyat</div></th>
+                        <th style="border: 1px solid #cbd5e1; text-align: center; vertical-align: middle; mso-number-format:'\\@';"><div style="font-size:11pt;">Oran</div></th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        allStoreBlocks.forEach((block, blockIndex) => {
+            block.productList.forEach((prod, prodIndex) => {
+                let storeVal = prodIndex === 0 ? `<b>${block.storeName}</b>` : "";
+                
+                tableHtml += `
+                    <tr height="32" style="vertical-align: middle;">
+                        <td style="border: 1px solid #cbd5e1; color: #000000; text-align: left; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:10pt;">${storeVal}</div></td>
+                        <td style="border: 1px solid #cbd5e1; color: #1E293B; text-align: left; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:10pt;">${prod.code}</div></td>
+                        <td style="border: 1px solid #cbd5e1; color: #1E293B; text-align: left; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:10pt;">${prod.name}</div></td>
+                        <td style="border: 1px solid #cbd5e1; color: #1E293B; text-align: center; mso-number-format:'\\@';"><div style="font-size:10pt;">${prod.quantity}</div></td>
+                        <td style="border: 1px solid #cbd5e1; font-weight: bold; color: #000000; text-align: left; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:10pt;">${prod.normalPrice}</div></td>
+                        <td style="border: 1px solid #cbd5e1; font-weight: bold; color: #000000; text-align: left; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:10pt;">${prod.discountPrice}</div></td>
+                        <td style="border: 1px solid #cbd5e1; font-weight: bold; background-color: #FEF08A; color: #854D0E; text-align: center; mso-number-format:'\\@';"><div style="font-size:10pt;">${prod.ratio}</div></td>
+                    </tr>
+                `;
+            });
+
+            if (blockIndex < allStoreBlocks.length - 1) {
+                tableHtml += `
+                    <tr height="28"><td style="border:1px solid #cbd5e1;" colspan="7">&nbsp;</td></tr>
+                    <tr height="28"><td style="border:1px solid #cbd5e1;" colspan="7">&nbsp;</td></tr>
+                `;
+            }
+        });
+
+        tableHtml += `</tbody></table>`;
+
+        let excelTemplate = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="UTF-8">
+                </head>
+            <body>
+                ${tableHtml}
+            </body>
+            </html>
+        `;
+
+        let blob = new Blob([excelTemplate], { type: "application/vnd.ms-excel;charset=utf-8" });
+        
+        if (triggerDownload) {
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "Kampanya_Talep_Formu.xls";
+            link.click();
+            return null;
+        }
+        return blob;
+    }
+
+    async function shareOrMailExcel() {
+        if (allStoreBlocks.length === 0) {
+            alert("Önce listeye ürün eklemeli, sonra göndermelisiniz.");
+            return;
+        }
+
+        let excelBlob = exportStyledExcelWithGridlines(false);
+        if(!excelBlob) return;
+
+        let file = new File([excelBlob], "Kampanya_Talep_Formu.xls", { type: excelBlob.type });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Kampanya Talep Formu',
+                    text: 'Kolay gelsin Fatma Hanım,\n\nKampanya talebimiz vardır ilgilenirseniz sevinirim.\n\nİyi çalışmalar.'
+                });
+            } catch (err) {
+                fallbackMailMethod();
+            }
+        } else {
+            fallbackMailMethod();
+        }
+    }
+
+    function fallbackMailMethod() {
+        exportStyledExcelWithGridlines(true);
+        alert("Kampanya Excel dosyanız indirildi!\n\nMail ekranında dosyayı eklemeyi unutmayın.");
+        let subject = encodeURIComponent("Kampanya Talebi Hk.");
+        let body = encodeURIComponent("Kolay gelsin Fatma Hanım,\n\nKampanya talebimiz vardır ilgilenirseniz sevinirim.\n\nİyi çalışmalar.");
+        window.location.href = `mailto:${targetEmailAddress}?subject=${subject}&body=${body}`;
+    }
+</script>
+
+</body>
+</html>
