@@ -120,12 +120,18 @@
 </div>
 
 <script>
-    // Tarayıcı hafızasında kayıtlı e-posta var mı bak, yoksa varsayılanı kullan
     let targetEmailAddress = localStorage.getItem('savedEmailAddress') || "bolgesorumlusu@firma.com";
     let allStoreBlocks = [];
 
-    // Sayfa yüklendiğinde hafızadaki güncel e-postayı ekrana yazdır
     document.getElementById('currentEmailDisplay').innerText = targetEmailAddress;
+
+    // Metni eşleştirme için temizleyen yardımcı fonksiyon (Boşlukları atar, küçük harfe çevirir, Türkçe karakterleri eşitler)
+    function cleanTextForMatch(text) {
+        if (!text) return "";
+        let maps = { 'İ': 'i', 'I': 'i', 'ı': 'i', 'Ğ': 'g', 'ğ': 'g', 'Ü': 'u', 'ü': 'u', 'Ş': 's', 'ş': 's', 'Ö': 'o', 'ö': 'o', 'Ç': 'c', 'ç': 'c' };
+        let cleaned = text.toUpperCase().replace(/[İIĞÜŞÖÇ]/g, function (m) { return maps[m]; }).toLowerCase();
+        return cleaned.replace(/[^a-z0-9]/g, "").trim();
+    }
 
     function parseInputLine(text) {
         if (!text.trim()) return null;
@@ -227,10 +233,28 @@
         }
 
         storeList.forEach(store => {
-            allStoreBlocks.push({
-                storeName: store,
-                productList: products
-            });
+            let newCleanedStore = cleanTextForMatch(store);
+            let targetBlock = null;
+
+            // Listede ilk 5 harfi tutan mevcut bir mağaza var mı kontrol et
+            if (newCleanedStore !== "-") {
+                targetBlock = allStoreBlocks.find(block => {
+                    let existingCleaned = cleanTextForMatch(block.storeName);
+                    // İlk 5 karakter uyuşuyor mu?
+                    return existingCleaned.substring(0, 5) === newCleanedStore.substring(0, 5);
+                });
+            }
+
+            if (targetBlock) {
+                // Mağaza bulunduysa ürünleri altına ekle
+                targetBlock.productList = targetBlock.productList.concat(products);
+            } else {
+                // Bulunmadıysa yeni blok oluştur
+                allStoreBlocks.push({
+                    storeName: store,
+                    productList: [...products]
+                });
+            }
         });
 
         updateTable();
@@ -276,7 +300,6 @@
         if (newEmail !== null && newEmail.trim() !== "") {
             targetEmailAddress = newEmail.trim();
             document.getElementById('currentEmailDisplay').innerText = targetEmailAddress;
-            // Yeni e-postayı tarayıcı hafızasına kaydet
             localStorage.setItem('savedEmailAddress', targetEmailAddress);
         }
     }
