@@ -1,20 +1,22 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kampanya Talep Sistemi</title>
+    <title>Kampanya Talep Otomasyonu v18</title>
     
+    <!-- PWA & Mobil Uygulama Gereksinimleri -->
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="favicon.png">
     
+    <!-- Manifest Bilgileri -->
     <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkthbXBhbnlhIFRhbGVwIE90b21hc3lvbnUiLAogICJzaG9ydF9uYW1lIjogIkthbXBhbnlhIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmOGZhZmMiLAogICJ0aGVtZV9jb2xvciI6ICIjMGYxNzJhIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZmF2aWNvbi5wbmciLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
 
     <style>
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px 10px; color: #1e293b; }
-        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
         h2 { color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 20px 0; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; text-align: center; }
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: 600; margin-bottom: 6px; color: #475569; font-size: 13px; }
@@ -34,8 +36,8 @@
         h3 { color: #334155; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
         
         /* Web Önizleme Tablosu */
-        table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); min-width: 750px; }
-        th, td { border: 1px solid #e2e8f0; padding: 12px 18px; text-align: left; vertical-align: middle; }
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); min-width: 900px; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px 14px; text-align: left; vertical-align: middle; }
         th { background-color: #334155; color: #ffffff; font-weight: 600; font-size: 14px; border-bottom: 3px solid #1e293b; }
         
         .col-fixed { color: #1e293b; font-weight: 500; }
@@ -47,6 +49,16 @@
         .spacer-row { background-color: #ffffff; height: 26px; }
         .spacer-row td { border: 1px solid #cbd5e1; }
         
+        /* Satır İçi Düzenleme Butonları */
+        .btn-row { padding: 5px 10px; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 4px; transition: background 0.2s; }
+        .btn-edit { background-color: #e2e8f0; color: #334155; }
+        .btn-edit:hover { background-color: #cbd5e1; }
+        .btn-delete { background-color: #fee2e2; color: #ef4444; }
+        .btn-delete:hover { background-color: #fca5a5; }
+        .btn-save { background-color: #dcfce7; color: #15803d; }
+        .btn-save:hover { background-color: #bbf7d0; }
+        .table-input { width: 100%; padding: 6px; font-size: 13px; border: 1px solid #3b82f6; border-radius: 4px; background: white; box-sizing: border-box; }
+
         .btn-group { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 24px; }
         @media(min-width: 500px) {
             .btn-group { flex-direction: row; }
@@ -85,11 +97,11 @@
             </select>
         </div>
         <div class="form-group">
-            <label for="discountValue">Değer</label>
+            <label for="discountValue">Değer (Çoklu ürün için virgülle ayırın: 25, 30)</label>
             <input type="text" id="discountValue" placeholder="Örn: 27">
         </div>
         <div class="form-group">
-            <label for="quantity">Adet</label>
+            <label for="quantity">Adet (Çoklu ürün için virgülle ayırın: 10, 20)</label>
             <input type="text" id="quantity" placeholder="Örn: 45">
         </div>
     </div>
@@ -108,6 +120,7 @@
                     <th>Fiyat</th>
                     <th>Kamp. Fiyat</th>
                     <th style="text-align: center;">Oran</th>
+                    <th style="text-align: center; width: 130px;">İşlemler</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -129,6 +142,7 @@
 <script>
     let targetEmailAddress = localStorage.getItem('savedEmailAddress') || "bolgesorumlusu@firma.com";
     let allStoreBlocks = [];
+    let editingRowKey = null; // Hangi satırın düzenlendiğini tutar
 
     document.getElementById('currentEmailDisplay').innerText = targetEmailAddress;
 
@@ -164,6 +178,7 @@
     }
 
     function formatPriceDisplay(num) {
+        if (typeof num !== 'number') return num;
         if (num % 1 === 0) return num.toString();
         if ((num * 2) % 1 === 0) return num.toFixed(1).replace('.', ',');
         return Math.round(num).toString();
@@ -171,7 +186,7 @@
 
     function calculateDiscount(normalPrice, type, val) {
         if (!val || isNaN(normalPrice)) return { price: "-", ratio: "-" };
-        let numericVal = parseFloat(val.replace(',', '.'));
+        let numericVal = parseFloat(val.toString().replace(',', '.'));
         if (isNaN(numericVal)) return { price: val, ratio: "-" };
 
         let finalPrice = normalPrice;
@@ -207,19 +222,34 @@
         let rawInputText = document.getElementById('rawInput').value;
         let storesInput = document.getElementById('stores').value;
         let discountType = document.getElementById('discountType').value;
-        let discountValue = document.getElementById('discountValue').value;
-        let quantity = document.getElementById('quantity').value;
+        let discountValueInput = document.getElementById('discountValue').value;
+        let quantityInput = document.getElementById('quantity').value;
 
         let storeList = storesInput.split(',').map(s => s.trim()).filter(s => s !== "");
         if (storeList.length === 0) storeList = ["-"];
 
-        let lines = rawInputText.split('\n');
+        let lines = rawInputText.split('\n').filter(l => l.trim() !== "");
+        
+        // Değerleri ve adetleri virgüllerine göre dizilere ayırıyoruz
+        let discountValues = discountValueInput.split(',').map(v => v.trim());
+        let quantityValues = quantityInput.split(',').map(q => q.trim());
+
         let products = [];
 
-        lines.forEach(line => {
+        lines.forEach((line, index) => {
             let parsed = parseInputLine(line);
             if (parsed) {
-                let discountResult = calculateDiscount(parsed.price, discountType, discountValue);
+                // Eğer girilen indirim tipi 'price' (fiyat) ise ve dizide sıradaki eleman varsa onu al, yoksa ilk elemanı kullan
+                let currentDiscountVal = discountValues[index] !== undefined ? discountValues[index] : discountValues[0];
+                if (discountType === 'percent') {
+                    // Oran seçildiyse hepsine aynı oranı uygula (eğer tek oran girildiyse)
+                    currentDiscountVal = discountValues[index] !== undefined ? discountValues[index] : discountValues[0];
+                }
+
+                // Adet için de aynı mantık
+                let currentQty = quantityValues[index] !== undefined ? quantityValues[index] : (quantityValues[0] || "-");
+
+                let discountResult = calculateDiscount(parsed.price, discountType, currentDiscountVal);
                 let displayNormal = typeof parsed.price === 'number' ? formatPriceDisplay(parsed.price) + " TL" : parsed.price;
                 
                 products.push({
@@ -228,7 +258,7 @@
                     normalPrice: displayNormal,
                     discountPrice: discountResult.price,
                     ratio: discountResult.ratio,
-                    quantity: quantity || "-"
+                    quantity: currentQty || "-"
                 });
             }
         });
@@ -250,11 +280,11 @@
             }
 
             if (targetBlock) {
-                targetBlock.productList = targetBlock.productList.concat(products);
+                targetBlock.productList = targetBlock.productList.concat(JSON.parse(JSON.stringify(products)));
             } else {
                 allStoreBlocks.push({
                     storeName: store,
-                    productList: [...products]
+                    productList: JSON.parse(JSON.stringify(products))
                 });
             }
         });
@@ -273,16 +303,39 @@
 
         allStoreBlocks.forEach((block, blockIndex) => {
             block.productList.forEach((prod, prodIndex) => {
+                let rowKey = `${blockIndex}-${prodIndex}`;
                 let row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="col-fixed"><strong>${prodIndex === 0 ? block.storeName : ""}</strong></td>
-                    <td class="col-fixed">${prod.code}</td>
-                    <td class="col-fixed">${prod.name}</td>
-                    <td class="text-center">${prod.quantity}</td>
-                    <td class="col-dark-price">${prod.normalPrice}</td>
-                    <td class="col-dark-price">${prod.discountPrice}</td>
-                    <td class="col-ratio-yellow">${prod.ratio}</td>
-                `;
+
+                if (editingRowKey === rowKey) {
+                    // Düzenleme Modu Satırı
+                    row.innerHTML = `
+                        <td>${prodIndex === 0 ? `<input type="text" id="editStore-${rowKey}" class="table-input" value="${block.storeName}">` : ""}</td>
+                        <td><input type="text" id="editCode-${rowKey}" class="table-input" value="${prod.code}"></td>
+                        <td><input type="text" id="editName-${rowKey}" class="table-input" value="${prod.name}"></td>
+                        <td><input type="text" id="editQty-${rowKey}" class="table-input text-center" value="${prod.quantity}"></td>
+                        <td><input type="text" id="editNormal-${rowKey}" class="table-input" value="${prod.normalPrice}"></td>
+                        <td><input type="text" id="editDiscount-${rowKey}" class="table-input" value="${prod.discountPrice}"></td>
+                        <td><input type="text" id="editRatio-${rowKey}" class="table-input text-center" value="${prod.ratio}"></td>
+                        <td class="text-center">
+                            <button class="btn-row btn-save" onclick="saveRow('${rowKey}', ${blockIndex}, ${prodIndex})">Kaydet</button>
+                        </td>
+                    `;
+                } else {
+                    // Normal Görünüm Satırı
+                    row.innerHTML = `
+                        <td class="col-fixed"><strong>${prodIndex === 0 ? block.storeName : ""}</strong></td>
+                        <td class="col-fixed">${prod.code}</td>
+                        <td class="col-fixed">${prod.name}</td>
+                        <td class="text-center">${prod.quantity}</td>
+                        <td class="col-dark-price">${prod.normalPrice}</td>
+                        <td class="col-dark-price">${prod.discountPrice}</td>
+                        <td class="col-ratio-yellow">${prod.ratio}</td>
+                        <td class="text-center">
+                            <button class="btn-row btn-edit" onclick="editRow('${rowKey}')">Düzenle</button>
+                            <button class="btn-row btn-delete" onclick="deleteRow(${blockIndex}, ${prodIndex})">Sil</button>
+                        </td>
+                    `;
+                }
                 tbody.appendChild(row);
             });
 
@@ -290,11 +343,46 @@
                 for(let i=0; i<2; i++) {
                     let emptyRow = document.createElement('tr');
                     emptyRow.className = "spacer-row";
-                    emptyRow.innerHTML = "<td colspan='7'></td>";
+                    emptyRow.innerHTML = "<td colspan='8'></td>";
                     tbody.appendChild(emptyRow);
                 }
             }
         });
+    }
+
+    function editRow(rowKey) {
+        editingRowKey = rowKey;
+        updateTable();
+    }
+
+    function saveRow(rowKey, blockIndex, prodIndex) {
+        let block = allStoreBlocks[blockIndex];
+        let prod = block.productList[prodIndex];
+
+        if (prodIndex === 0) {
+            let storeInputVal = document.getElementById(`editStore-${rowKey}`).value.trim();
+            block.storeName = storeInputVal || "-";
+        }
+
+        prod.code = document.getElementById(`editCode-${rowKey}`).value.trim();
+        prod.name = document.getElementById(`editName-${rowKey}`).value.trim();
+        prod.quantity = document.getElementById(`editQty-${rowKey}`).value.trim();
+        prod.normalPrice = document.getElementById(`editNormal-${rowKey}`).value.trim();
+        prod.discountPrice = document.getElementById(`editDiscount-${rowKey}`).value.trim();
+        prod.ratio = document.getElementById(`editRatio-${rowKey}`).value.trim();
+
+        editingRowKey = null;
+        updateTable();
+    }
+
+    function deleteRow(blockIndex, prodIndex) {
+        allStoreBlocks[blockIndex].productList.splice(prodIndex, 1);
+        
+        // Eğer blokta hiç ürün kalmadıysa bloğu tamamen uçur
+        if (allStoreBlocks[blockIndex].productList.length === 0) {
+            allStoreBlocks.splice(blockIndex, 1);
+        }
+        updateTable();
     }
 
     function editEmailAddress() {
@@ -402,7 +490,7 @@
             try {
                 await navigator.share({
                     files: [file],
-                    title: 'Kampanya Talep Formu',
+                    title: 'Campanya Talep Formu',
                     text: 'Kolay gelsin Fatma Hanım,\n\nKampanya talebimiz vardır ilgilenirseniz sevinirim.\n\nİyi çalışmalar.'
                 });
             } catch (err) {
@@ -421,10 +509,10 @@
         window.location.href = `mailto:${targetEmailAddress}?subject=${subject}&body=${body}`;
     }
 
-    // --- JET HIZINDA AÇILMA VE UYGULAMA KURULUM MOTORU (SERVICE WORKER) ---
+    // --- JET HIZINDA AÇILMA MOTORU (SERVICE WORKER) ---
     if ('serviceWorker' in navigator) {
         const swCode = `
-            const CACHE_NAME = 'kampanya-otomasyon-cache-v1';
+            const CACHE_NAME = 'kampanya-otomasyon-cache-v2';
             const ASSETS = [location.pathname];
             self.addEventListener('install', e => {
                 e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
