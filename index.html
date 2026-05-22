@@ -593,21 +593,35 @@
     querySnapshot.forEach(d => docs.push(d.data()));
     docs.sort((a,b) => a.storeName.localeCompare(b.storeName));
 
-    // Sütun genişlikleri: 
-    // A=18.5, B=15.2, C=13, D=default, E=12.14, F=12.80, G=default
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
     <?mso-application progid="Excel.Sheet"?>
     <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
     <Styles>
-        <Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#203764" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center"/></Style>
-        <Style ss:ID="Store"><Font ss:Bold="1"/><Alignment ss:Vertical="Center"/></Style>
-        <Style ss:ID="PriceGray"><Interior ss:Color="#EAEAEA" ss:Pattern="Solid"/><Font ss:Bold="1"/><Alignment ss:Horizontal="Right"/></Style>
-        <Style ss:ID="PriceNormal"><Alignment ss:Horizontal="Right"/></Style>
-        <Style ss:ID="Ratio"><Interior ss:Color="#FFE599" ss:Pattern="Solid"/><Font ss:Bold="1"/><Alignment ss:Horizontal="Center"/></Style>
+        <Style ss:ID="Default" ss:Name="Normal"><Font ss:FontName="Arial" ss:Size="11"/></Style>
+        <Style ss:ID="Header">
+            <Font ss:FontName="Arial" ss:Bold="1" ss:Color="#FFFFFF"/>
+            <Interior ss:Color="#203764" ss:Pattern="Solid"/>
+            <Alignment ss:Horizontal="Center"/>
+        </Style>
+        <Style ss:ID="Store">
+            <Font ss:FontName="Arial" ss:Bold="1"/>
+            <Alignment ss:Vertical="Center"/>
+        </Style>
+        <Style ss:ID="PriceGray">
+            <Font ss:FontName="Arial" ss:Bold="1"/>
+            <Interior ss:Color="#EAEAEA" ss:Pattern="Solid"/>
+            <Alignment ss:Horizontal="Right"/>
+        </Style>
+        <Style ss:ID="PriceNormal"><Font ss:FontName="Arial"/><Alignment ss:Horizontal="Right"/></Style>
+        <Style ss:ID="Ratio">
+            <Font ss:FontName="Arial" ss:Bold="1"/>
+            <Interior ss:Color="#FFE599" ss:Pattern="Solid"/>
+            <Alignment ss:Horizontal="Center"/>
+        </Style>
     </Styles>
     <Worksheet ss:Name="Talepler">
     <Table>
-        <Column ss:Width="118.75"/> <Column ss:Width="94.0"/>  <Column ss:Width="97.5"/>   <Column ss:Width="60.0"/>   <Column ss:Width="81.0"/>   <Column ss:Width="96.0"/>   <Row>
+        <Column ss:Width="138.75"/> <Column ss:Width="114.0"/>  <Column ss:Width="97.5"/>   <Column ss:Width="50.0"/>   <Column ss:Width="91.0"/>   <Column ss:Width="96.0"/>   <Column ss:Width="60.0"/>   <Row>
             <Cell ss:StyleID="Header"><Data ss:Type="String">Mağaza Adı</Data></Cell>
             <Cell ss:StyleID="Header"><Data ss:Type="String">Ürün Kodu</Data></Cell>
             <Cell ss:StyleID="Header"><Data ss:Type="String">Ürün Adı</Data></Cell>
@@ -644,7 +658,6 @@
     a.download = "Kampanya_Talepleri.xls";
     a.click();
 });
-
         document.getElementById('btnSendMail').addEventListener('click', async () => {
             if (confirm('Kampanyayı kilitleyip Mail şablonunu açmak istiyor musunuz?')) {
                 const querySnapshot = await getDocs(systemCollection);
