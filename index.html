@@ -591,6 +591,8 @@
     querySnapshot.forEach(d => docs.push(d.data()));
     docs.sort((a,b) => a.storeName.localeCompare(b.storeName));
 
+    // Sütun genişlikleri: 
+    // A=18.5, B=15.2, C=13, D=default, E=12.14, F=12.80, G=default
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
     <?mso-application progid="Excel.Sheet"?>
     <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
@@ -601,21 +603,22 @@
         <Style ss:ID="PriceNormal"><Alignment ss:Horizontal="Right"/></Style>
         <Style ss:ID="Ratio"><Interior ss:Color="#FFE599" ss:Pattern="Solid"/><Font ss:Bold="1"/><Alignment ss:Horizontal="Center"/></Style>
     </Styles>
-    <Worksheet ss:Name="Talepler"><Table>`;
-
-    xml += `<Row><Cell ss:StyleID="Header"><Data ss:Type="String">Mağaza Adı</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Ürün Kodu</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Ürün Adı</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Adet</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Fiyat</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Kamp. Fiyat</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Oran</Data></Cell></Row>`;
+    <Worksheet ss:Name="Talepler">
+    <Table>
+        <Column ss:Width="138.75"/> <Column ss:Width="114.0"/>  <Column ss:Width="97.5"/>   <Column ss:Width="60.0"/>   <Column ss:Width="91.0"/>   <Column ss:Width="96.0"/>   <Row>
+            <Cell ss:StyleID="Header"><Data ss:Type="String">Mağaza Adı</Data></Cell>
+            <Cell ss:StyleID="Header"><Data ss:Type="String">Ürün Kodu</Data></Cell>
+            <Cell ss:StyleID="Header"><Data ss:Type="String">Ürün Adı</Data></Cell>
+            <Cell ss:StyleID="Header"><Data ss:Type="String">Adet</Data></Cell>
+            <Cell ss:StyleID="Header"><Data ss:Type="String">Fiyat</Data></Cell>
+            <Cell ss:StyleID="Header"><Data ss:Type="String">Kamp. Fiyat</Data></Cell>
+            <Cell ss:StyleID="Header"><Data ss:Type="String">Oran</Data></Cell>
+        </Row>`;
 
     let lastStore = "";
     docs.forEach(d => {
         if (lastStore !== "" && lastStore !== d.storeName) {
-            xml += `<Row><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/></Row>
-                    <Row><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/></Row>`;
+            xml += `<Row><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/></Row><Row><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/></Row>`;
         }
         let isFirst = (lastStore !== d.storeName);
         let priceStyle = isFirst ? ' ss:StyleID="PriceGray"' : ' ss:StyleID="PriceNormal"';
