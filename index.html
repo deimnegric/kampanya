@@ -666,9 +666,9 @@
                 } else {
                     await updateDoc(doc(db, "systemControl", querySnapshot.docs[0].id), { status: 'sent' });
                 }
-                const emailTarget = "fatma.hanim@example.com"; 
+                const emailTarget = "fatma.torun@bim.com.tr"; 
                 // 📌 Konu kısmı tamamen küçük harfle "Kampanya talebi hk." olarak güncellendi
-                const subject = encodeURIComponent("kampanya talebi hk.");
+                const subject = encodeURIComponent("Kampanya Talebi Hk.");
                 const body = encodeURIComponent("Fatma Hanım kolay gelsin,\n\nKampanya talebimiz vardır. İlgilenirseniz seviniriz.\n\nİyi çalışmalar.");
                 window.location.href = `mailto:${emailTarget}?subject=${subject}&body=${body}`;
             }
