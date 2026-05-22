@@ -575,60 +575,97 @@
         });
 
         // 📊 GÖRSELDEKİ STİLE BİREBİR UYGUN RENKLİ EXCEL DOWNLOAD SİSTEMİ
-        document.getElementById('btnExcelDownload').addEventListener('click', async () => {
-        document.getElementById('btnExcelDownload').addEventListener('click', async () => {
+        // 📊 GÖRSELDEKİ İSTEKLERE BİREBİR UYGUN EXCEL ÜRETİCİ
+document.getElementById('btnExcelDownload').addEventListener('click', async () => {
     const querySnapshot = await getDocs(campaignCollection);
-    let rawData = [];
-    querySnapshot.forEach(doc => rawData.push(doc.data()));
-    rawData.sort((a,b) => a.storeName.localeCompare(b.storeName));
+    let documents = [];
+    querySnapshot.forEach(doc => documents.push(doc.data()));
+    // Mağaza adına göre alfabetik sıralama
+    documents.sort((a,b) => a.storeName.localeCompare(b.storeName));
 
-    // Excel verisini hazırlama
-    let data = [["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"]];
+    // Birebir görseldeki Excel XML ve CSS yapısı tasarımı
+    let excelTemplate = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            table { border-collapse: collapse; font-family: Arial, sans-serif; }
+            td, th { border: 1px solid #D9D9D9; padding: 6px 8px; font-size: 10pt; vertical-align: middle; }
+            th { background-color: #2C3E50; color: #FFFFFF; font-size: 11pt; font-weight: bold; border-bottom: 2px solid #000000; text-align: left; }
+            .center { text-align: center; }
+            .right { text-align: right; }
+            .store-title { font-weight: bold; font-size: 11pt; color: #000000; text-align: left; }
+            .price-style { font-weight: bold; color: #000000; text-align: right; }
+            .price-gray-style { font-weight: bold; color: #000000; text-align: right; background-color: #EAEAEA; }
+            .ratio-style { background-color: #FFE599; color: #7F6000; font-weight: bold; text-align: center; }
+            .empty-row { height: 20px; border: none; }
+        </style>
+    </head>
+    <body>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mağaza Adı</th>
+                    <th>Ürün Kodu</th>
+                    <th>Ürün Adı</th>
+                    <th class="center">Adet</th>
+                    <th class="right">Fiyat</th>
+                    <th class="right">Kamp. Fiyat</th>
+                    <th class="center">Oran</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
     let lastStore = "";
-    
-    rawData.forEach(d => {
+    documents.forEach(d => {
+        let currentStoreNameDisplay = d.storeName.toLowerCase();
+        let isFirstOfBlock = false;
+
+        // Mağaza değiştiğinde 2 satır boşluk ekleme kuralı
         if (lastStore !== "" && lastStore !== d.storeName) {
-            data.push(["", "", "", "", "", "", ""]); // 1. Boş satır
-            data.push(["", "", "", "", "", "", ""]); // 2. Boş satır
+            excelTemplate += `
+            <tr class="empty-row"><td colspan="7" style="border:none; border-bottom: 1px solid #D9D9D9;"></td></tr>
+            <tr class="empty-row"><td colspan="7" style="border:none;"></td></tr>`;
         }
-        data.push([d.storeName, d.code, d.name, d.quantity, d.normalPrice, d.discountPrice, d.ratio]);
-        lastStore = d.storeName;
+
+        // Mağaza ismi ilk satırda görünür, altındakilerde gizlenir
+        if (currentStoreNameDisplay === lastStore) {
+            currentStoreNameDisplay = "";
+        } else {
+            lastStore = currentStoreNameDisplay;
+            isFirstOfBlock = true; // Sadece bloğun ilk satırını yakala
+        }
+
+        // Eğer bloğun ilk satırıysa fiyatı grileştir, değilse normal
+        let priceClass = isFirstOfBlock ? "price-gray-style" : "price-style";
+
+        excelTemplate += `
+            <tr>
+                <td class="store-title">${currentStoreNameDisplay}</td>
+                <td style="mso-number-format:'\\@';">${d.code}</td>
+                <td>${d.name.toLowerCase()}</td>
+                <td class="center">${d.quantity}</td>
+                <td class="${priceClass}">${parseFloat(d.normalPrice).toLocaleString('tr-TR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} TL</td>
+                <td class="${priceClass}">${parseFloat(d.discountPrice).toLocaleString('tr-TR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} TL</td>
+                <td class="ratio-style">${d.ratio}</td>
+            </tr>`;
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(data);
+    excelTemplate += `
+            </tbody>
+        </table>
+    </body>
+    </html>`;
 
-    // Görseldeki stil kurallarını uygulama
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    for (let R = range.s.r; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-            let cell = ws[XLSX.utils.encode_cell({r: R, c: C})];
-            if (!cell) continue;
-
-            // Başlık Stili
-            if (R === 0) {
-                cell.s = { 
-                    fill: { fgColor: { rgb: "203764" } }, 
-                    font: { bold: true, color: { rgb: "FFFFFF" } },
-                    alignment: { horizontal: "center" }
-                };
-            } 
-            // Oran Sütunu (Sarı)
-            else if (C === 6) {
-                cell.s = { 
-                    fill: { fgColor: { rgb: "FFE599" } },
-                    font: { bold: true }
-                };
-            }
-        }
-    }
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Talepler");
-    XLSX.writeFile(wb, "Kampanya_Talepleri.xlsx");
-});    const querySnapshot = await getDocs(campaignCollection);
-            let documents = [];
-            querySnapshot.forEach(doc => documents.push(doc.data()));
-            documents.sort((a,b) => a.storeName.localeCompare(b.storeName));
+    const blob = new Blob([excelTemplate], { type: "application/vnd.ms-excel" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Kampanya_Talepleri_${new Date().toLocaleDateString('tr-TR')}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+});
 
             // Birebir görseldeki Excel XML ve CSS yapısı tasarımı
             let excelTemplate = `
