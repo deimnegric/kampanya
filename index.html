@@ -1,531 +1,646 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kampanya Talep Otomasyonu v18</title>
-    
-    <!-- PWA & Mobil Uygulama Gereksinimleri -->
-    <meta name="theme-color" content="#0f172a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="icon" type="image/png" href="favicon.png">
-    
-    <!-- Manifest Bilgileri -->
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkthbXBhbnlhIFRhbGVwIE90b21hc3lvbnUiLAogICJzaG9ydF9uYW1lIjogIkthbXBhbnlhIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmOGZhZmMiLAogICJ0aGVtZV9jb2xvciI6ICIjMGYxNzJhIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZmF2aWNvbi5wbmciLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
-
+    <title>Kampanya Talep </title>
+    <!-- Google Fonts & Tailwind CSS CDN -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Excel indirmek için SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px 10px; color: #1e293b; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-        h2 { color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 20px 0; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: 600; margin-bottom: 6px; color: #475569; font-size: 13px; }
-        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f8fafc; transition: all 0.2s; }
-        input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; background-color: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-        textarea { resize: vertical; min-height: 100px; }
-        .grid-4 { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        @media(min-width: 768px) {
-            .grid-4 { grid-template-columns: 2fr 1fr 1fr 1fr; gap: 16px; }
-            body { padding: 40px 20px; }
-            .container { padding: 32px; }
-            h2 { font-size: 24px; text-align: left; }
-        }
-        .btn-add { background-color: #0f172a; color: white; width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 8px; font-size: 14px; }
-        .btn-add:hover { background-color: #1e293b; }
-        .preview-area { margin-top: 30px; overflow-x: auto; }
-        h3 { color: #334155; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
-        
-        /* Web Önizleme Tablosu */
-        table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); min-width: 900px; }
-        th, td { border: 1px solid #e2e8f0; padding: 10px 14px; text-align: left; vertical-align: middle; }
-        th { background-color: #334155; color: #ffffff; font-weight: 600; font-size: 14px; border-bottom: 3px solid #1e293b; }
-        
-        .col-fixed { color: #1e293b; font-weight: 500; }
-        .col-dark-price { color: #000000; font-weight: 700; background-color: #ffffff; }
-        .col-ratio-yellow { background-color: #fef08a !important; color: #854d0e; font-weight: 700; text-align: center; }
-        .text-center { text-align: center; }
-        
-        tr:hover { background-color: #f1f5f9; }
-        .spacer-row { background-color: #ffffff; height: 26px; }
-        .spacer-row td { border: 1px solid #cbd5e1; }
-        
-        /* Satır İçi Düzenleme Butonları */
-        .btn-row { padding: 5px 10px; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 4px; transition: background 0.2s; }
-        .btn-edit { background-color: #e2e8f0; color: #334155; }
-        .btn-edit:hover { background-color: #cbd5e1; }
-        .btn-delete { background-color: #fee2e2; color: #ef4444; }
-        .btn-delete:hover { background-color: #fca5a5; }
-        .btn-save { background-color: #dcfce7; color: #15803d; }
-        .btn-save:hover { background-color: #bbf7d0; }
-        .table-input { width: 100%; padding: 6px; font-size: 13px; border: 1px solid #3b82f6; border-radius: 4px; background: white; box-sizing: border-box; }
-
-        .btn-group { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 24px; }
-        @media(min-width: 500px) {
-            .btn-group { flex-direction: row; }
-        }
-        .btn-action { flex: 1; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 14px; text-align: center; text-decoration: none; }
-        .btn-download { background-color: #10b981; color: white; }
-        .btn-download:hover { background-color: #059669; }
-        .btn-mail { background-color: #3b82f6; color: white; }
-        .btn-mail:hover { background-color: #2563eb; }
-        .email-info { font-size: 12px; color: #64748b; margin-top: 12px; text-align: center; width: 100%; }
-        @media(min-width: 768px) { .email-info { text-align: right; } }
-        .email-edit-link { color: #3b82f6; text-decoration: none; font-weight: 600; cursor: pointer; margin-left: 5px; }
-        .email-edit-link:hover { text-decoration: underline; }
+        body { font-family: 'Inter', sans-serif; }
+        .blur-bg { backdrop-filter: blur(8px); }
+        /* Mağaza bazlı soft pastel renkler */
+        .store-color-0 { background-color: rgba(239, 246, 255, 0.8); } /* Soft Mavi */
+        .store-color-1 { background-color: rgba(240, 253, 244, 0.8); } /* Soft Yeşil */
+        .store-color-2 { background-color: rgba(254, 242, 242, 0.8); } /* Soft Kırmızı */
+        .store-color-3 { background-color: rgba(255, 251, 235, 0.8); } /* Soft Sarı */
+        .store-color-4 { background-color: rgba(250, 245, 255, 0.8); } /* Soft Mor */
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen antialiased">
 
-<div class="container">
-    <h2>📊 Kampanya Giriş Paneli</h2>
-    
-    <div class="form-group">
-        <label for="rawInput">Ürün Listesi</label>
-        <textarea id="rawInput" placeholder="0201013 altın süt 59,50&#10;0200607 günlük süt 55"></textarea>
-    </div>
-    
-    <div class="grid-4">
-        <div class="form-group">
-            <label for="stores">Mağaza Adı (Virgül ile ayırabilirsiniz)</label>
-            <input type="text" id="stores" placeholder="Örn: atatürk cd, altıyol">
-        </div>
-        <div class="form-group">
-            <label for="discountType">İndirim Tipi</label>
-            <select id="discountType">
-                <option value="percent">Oran (%)</option>
-                <option value="price">Fiyat (TL)</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="discountValue">Değer (Çoklu ürün için virgülle ayırın: 25, 30)</label>
-            <input type="text" id="discountValue" placeholder="Örn: 27">
-        </div>
-        <div class="form-group">
-            <label for="quantity">Adet (Çoklu ürün için virgülle ayırın: 10, 20)</label>
-            <input type="text" id="quantity" placeholder="Örn: 45">
-        </div>
-    </div>
-
-    <button class="btn-add" onclick="addStoreBlock()">Listeye Ekle</button>
-
-    <div class="preview-area">
-        <h3>Tablo Önizleme</h3>
-        <table id="excelTable">
-            <thead>
-                <tr>
-                    <th>Mağaza Adı</th>
-                    <th>Ürün Kodu</th>
-                    <th>Ürün Adı</th>
-                    <th class="text-center">Adet</th>
-                    <th>Fiyat</th>
-                    <th>Kamp. Fiyat</th>
-                    <th style="text-align: center;">Oran</th>
-                    <th style="text-align: center; width: 130px;">İşlemler</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <div>
-        <div class="btn-group">
-            <button class="btn-action btn-download" onclick="exportStyledExcelWithGridlines(true)">Excel Olarak İndir</button>
-            <button class="btn-action btn-mail" onclick="shareOrMailExcel()">Kampanyayı Gönder</button>
-        </div>
-        <div class="email-info">
-            Alıcı: <span id="currentEmailDisplay">bolgesorumlusu@firma.com</span> 
-            [<span class="email-edit-link" onclick="editEmailAddress()">Alıcıyı Düzenle</span>]
+    <!-- 🔑 GİRİŞ MODAL EKRANI -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-900/60 blur-bg z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-100">
+            <div class="text-center mb-6">
+                <!-- 📌 Başlık Kampanya Talep Olarak Güncellendi -->
+                <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Kampanya Talep</h2>
+                <p class="text-sm text-slate-500 mt-1">Devam etmek için lütfen giriş yapın</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Giriş Tipi</label>
+                    <select id="loginType" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        <option value="MS">MS (Mağaza Sorumlusu)</option>
+                        <option value="MSY">MSY (Mağaza Sorumlu Yardımcısı)</option>
+                        <option value="Günlük Temsilci">Günlük Temsilci</option>
+                        <option value="admin">Bölge Sorumlusu (Yönetici)</option>
+                    </select>
+                </div>
+                <div id="storeNameArea">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Mağaza Adı</label>
+                    <input type="text" id="loginStoreName" placeholder="Örn: Atatürk Cd., Altıyol, Anıt" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div id="adminKeyArea" class="hidden">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Yönetici Giriş Kodu</label>
+                    <input type="password" id="loginAdminKey" maxlength="6" placeholder="••••••" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <button id="btnEnterSystem" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition-colors shadow-sm cursor-pointer">
+                    Sisteme Giriş Yap
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    let targetEmailAddress = localStorage.getItem('savedEmailAddress') || "bolgesorumlusu@firma.com";
-    let allStoreBlocks = [];
-    let editingRowKey = null; // Hangi satırın düzenlendiğini tutar
-
-    document.getElementById('currentEmailDisplay').innerText = targetEmailAddress;
-
-    function cleanTextForMatch(text) {
-        if (!text) return "";
-        let maps = { 'İ': 'i', 'I': 'i', 'ı': 'i', 'Ğ': 'g', 'ğ': 'g', 'Ü': 'u', 'ü': 'u', 'Ş': 's', 'ş': 's', 'Ö': 'o', 'ö': 'o', 'Ç': 'c', 'ç': 'c' };
-        let cleaned = text.toUpperCase().replace(/[İIĞÜŞÖÇ]/g, function (m) { return maps[m]; }).toLowerCase();
-        return cleaned.replace(/[^a-z0-9]/g, "").trim();
-    }
-
-    function parseInputLine(text) {
-        if (!text.trim()) return null;
-        let parts = text.trim().split(/\s+/);
-        if (parts.length < 3) return null;
-
-        let rawPrice = parts[parts.length - 1].replace(',', '.');
-        let price = parseFloat(rawPrice);
-        if (isNaN(price)) price = parts[parts.length - 1];
-
-        let code = parts[0];
-        let name = parts.slice(1, parts.length - 1).join(" ");
-
-        if (isNaN(code)) {
-            code = parts[parts.length - 2];
-            name = parts.slice(0, parts.length - 2).join(" ");
-            if(isNaN(code)) {
-                code = "-";
-                name = parts.slice(0, parts.length - 1).join(" ");
-            }
-        }
-
-        return { code, name, price };
-    }
-
-    function formatPriceDisplay(num) {
-        if (typeof num !== 'number') return num;
-        if (num % 1 === 0) return num.toString();
-        if ((num * 2) % 1 === 0) return num.toFixed(1).replace('.', ',');
-        return Math.round(num).toString();
-    }
-
-    function calculateDiscount(normalPrice, type, val) {
-        if (!val || isNaN(normalPrice)) return { price: "-", ratio: "-" };
-        let numericVal = parseFloat(val.toString().replace(',', '.'));
-        if (isNaN(numericVal)) return { price: val, ratio: "-" };
-
-        let finalPrice = normalPrice;
-        let ratioDisplay = "";
-
-        if (type === 'percent') {
-            let discountAmount = (normalPrice * numericVal) / 100;
-            finalPrice = normalPrice - discountAmount;
+    <!-- 📱 ANA PANEL -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- ÜST BAR -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-6 gap-4">
+            <div class="flex items-center gap-3 justify-between w-full sm:w-auto">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-blue-50 rounded-xl text-blue-600 font-bold text-lg">KT</div>
+                    <div>
+                        <!-- 📌 Üst Logo Alanı Başlığı Kampanya Talep Olarak Güncellendi -->
+                        <h1 class="font-bold text-lg text-slate-900 tracking-tight">Kampanya Talep</h1>
+                        <p class="text-xs text-slate-500 flex items-center gap-1.5 flex-wrap">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Aktif Kullanıcı Oturumu: <span id="currentSessionBadge" class="font-semibold text-slate-700">Yükleniyor...</span>
+                        </p>
+                    </div>
+                </div>
+                <!-- 🚪 Çıkış Butonu -->
+                <button id="btnLogout" class="sm:ml-4 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl transition-colors border border-rose-200 flex items-center gap-1 cursor-pointer">
+                    Çıkış Yap
+                </button>
+            </div>
             
-            let remainder = finalPrice % 1;
-            if (Math.abs(remainder - 0.5) > 0.001 && Math.abs(remainder - (-0.5)) > 0.001) {
-                finalPrice = Math.round(finalPrice);
-            }
-            ratioDisplay = numericVal + "%";
-        } else {
-            finalPrice = numericVal;
-            if(normalPrice > 0) {
-                let diff = normalPrice - finalPrice;
-                let calculatedRatio = Math.round((diff / normalPrice) * 100);
-                ratioDisplay = calculatedRatio > 0 ? calculatedRatio + "%" : "0%";
-            } else {
-                ratioDisplay = "-";
-            }
-        }
+            <!-- Yönetici Kontrolleri -->
+            <div id="adminControls" class="hidden flex flex-wrap items-center gap-2">
+                <button id="btnExcelDownload" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
+                    Excel Dosyası İndir
+                </button>
+                <button id="btnSendMail" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
+                    Mail Gönder
+                </button>
+                <button id="btnUnlockSystem" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer hidden">
+                    Kilidi Aç & Listeyi Sıfırla
+                </button>
+            </div>
+        </div>
 
-        return {
-            price: formatPriceDisplay(finalPrice) + " TL",
-            ratio: ratioDisplay
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- VERİ GİRİŞ FORMU -->
+            <div class="lg:col-span-1 bg-white rounded-2xl p-5 shadow-sm border border-slate-100 h-fit">
+                <div class="mb-4">
+                    <h2 class="font-bold text-slate-900">Ürün Giriş Formu</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Lütfen kampanya bilgilerini eksiksiz girin.</p>
+                </div>
+                
+                <form id="campaignForm" class="space-y-3.5">
+                    <input type="hidden" id="docId">
+                    
+                    <!-- 👑 Bölge Sorumlusu Çoklu Mağaza Seçim Alanı -->
+                    <div id="adminStoreSelectArea" class="hidden p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100 space-y-2">
+                        <div class="flex items-center justify-between border-b border-blue-100/70 pb-1.5">
+                            <label class="block text-xs font-bold text-blue-800 uppercase tracking-wider">Kampanya Yapılacak Mağazalar</label>
+                            <button type="button" id="btnSelectAllStores" class="text-[11px] bg-blue-600 text-white px-2 py-0.5 rounded-lg hover:bg-blue-700 font-medium transition-colors cursor-pointer">Tümünü Seç</button>
+                        </div>
+                        
+                        <!-- Dinamik İşaretleme Kutuları Grubu -->
+                        <div id="adminStoreCheckboxGroup" class="max-h-44 overflow-y-auto space-y-1.5 pr-1 text-xs text-slate-700 font-medium">
+                            <!-- Mağazalar dinamik ve sabit liste olarak buraya gelecek -->
+                        </div>
+                        
+                        <div class="pt-1.5 border-t border-blue-100/70">
+                            <input type="text" id="adminManualStoreName" placeholder="Yeni Mağaza Ekle (Listede Yoksa)" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Ürün Kodu</label>
+                        <input type="text" id="productCode" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Ürün Adı</label>
+                        <input type="text" id="productName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Normal Fiyat (TL)</label>
+                            <input type="number" step="0.01" id="normalPrice" required placeholder="0.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">İstenen Fiyat (TL)</label>
+                            <input type="number" step="0.01" id="discountValue" required placeholder="0.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Talep Edilen Adet</label>
+                        <input type="number" id="quantity" required min="1" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+
+                    <button type="submit" id="btnSubmitForm" class="w-full mt-2 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm cursor-pointer">
+                        Listeye Ekle / Güncelle
+                    </button>
+                    <button type="button" id="btnCancelEdit" class="hidden w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-xs transition-colors cursor-pointer">
+                        Düzenlemeyi İptal Et
+                    </button>
+                </form>
+            </div>
+
+            <!-- CANLI TABLO -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div>
+                        <h2 class="font-bold text-slate-900 text-sm">Tüm Mağazaların Canlı Listesi</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Farklı mağaza blokları arasında 2 satırlık boşluk bırakılır.</p>
+                    </div>
+                    <div id="lockStatusBadge" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-medium flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Düzenlemeye Açık
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto flex-1">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-semibold">
+                                <th class="py-3 px-4">Mağaza</th>
+                                <th class="py-3 px-3">Kod</th>
+                                <th class="py-3 px-3">Ürün Adı</th>
+                                <th class="py-3 px-3 text-center">Adet</th>
+                                <th class="py-3 px-3">Normal Fiyat</th>
+                                <th class="py-3 px-3">İstenen Fiyat (Oran)</th>
+                                <th class="py-3 px-4 text-right">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="text-sm">
+                            <tr>
+                                <td colspan="7" class="text-center py-8 text-slate-400 text-xs">Yükleniyor veya henüz veri girilmedi...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- FIREBASE & INTERACTION SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { 
+            getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc, getDocs 
+        } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbx9rpPH3IGpdfgn-79GLL7o0Aa2ovAzw",
+            authDomain: "kampanya-80c2a.firebaseapp.com",
+            projectId: "kampanya-80c2a",
+            storageBucket: "kampanya-80c2a.firebasestorage.app",
+            messagingSenderId: "665592400645",
+            appId: "1:665592400645:web:4ebc93aa4060e76862c56c",
+            measurementId: "G-KWZM1HMYRW"
         };
-    }
 
-    function addStoreBlock() {
-        let rawInputText = document.getElementById('rawInput').value;
-        let storesInput = document.getElementById('stores').value;
-        let discountType = document.getElementById('discountType').value;
-        let discountValueInput = document.getElementById('discountValue').value;
-        let quantityInput = document.getElementById('quantity').value;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const campaignCollection = collection(db, "campaigns");
+        const systemCollection = collection(db, "systemControl");
 
-        let storeList = storesInput.split(',').map(s => s.trim()).filter(s => s !== "");
-        if (storeList.length === 0) storeList = ["-"];
+        let currentUser = { type: 'MS', name: '' };
+        let liveStoresList = []; 
+        let isSystemLocked = false;
+        let allSelectToggle = false; 
+        let localCampaignsCache = []; 
 
-        let lines = rawInputText.split('\n').filter(l => l.trim() !== "");
+        const targetStoresBaseList = [
+            "Atatürk Cd.", "Anıt", "Larende", "Altıyol", "Çaybaşı", "Gazanfer", "Ahmet Özcan", "Diş Hastanesi", "Uzunharmanlar"
+        ];
+
+        const loginModal = document.getElementById('loginModal');
+        const loginType = document.getElementById('loginType');
+        const storeNameArea = document.getElementById('storeNameArea');
+        const adminKeyArea = document.getElementById('adminKeyArea');
+        const loginStoreName = document.getElementById('loginStoreName');
+        const loginAdminKey = document.getElementById('loginAdminKey');
+        const btnEnterSystem = document.getElementById('btnEnterSystem');
+        const currentSessionBadge = document.getElementById('currentSessionBadge');
+        const adminControls = document.getElementById('adminControls');
+        const lockStatusBadge = document.getElementById('lockStatusBadge');
+        const btnUnlockSystem = document.getElementById('btnUnlockSystem');
+        const btnLogout = document.getElementById('btnLogout');
         
-        // Değerleri ve adetleri virgüllerine göre dizilere ayırıyoruz
-        let discountValues = discountValueInput.split(',').map(v => v.trim());
-        let quantityValues = quantityInput.split(',').map(q => q.trim());
+        const adminStoreSelectArea = document.getElementById('adminStoreSelectArea');
+        const adminStoreCheckboxGroup = document.getElementById('adminStoreCheckboxGroup');
+        const adminManualStoreName = document.getElementById('adminManualStoreName');
+        const btnSelectAllStores = document.getElementById('btnSelectAllStores');
 
-        let products = [];
+        const campaignForm = document.getElementById('campaignForm');
+        const docIdInput = document.getElementById('docId');
+        const productCodeInput = document.getElementById('productCode');
+        const productNameInput = document.getElementById('productName');
+        const normalPriceInput = document.getElementById('normalPrice');
+        const discountValueInput = document.getElementById('discountValue');
+        const quantityInput = document.getElementById('quantity');
+        const btnSubmitForm = document.getElementById('btnSubmitForm');
+        const btnCancelEdit = document.getElementById('btnCancelEdit');
+        const tableBody = document.getElementById('tableBody');
 
-        lines.forEach((line, index) => {
-            let parsed = parseInputLine(line);
-            if (parsed) {
-                // Eğer girilen indirim tipi 'price' (fiyat) ise ve dizide sıradaki eleman varsa onu al, yoksa ilk elemanı kullan
-                let currentDiscountVal = discountValues[index] !== undefined ? discountValues[index] : discountValues[0];
-                if (discountType === 'percent') {
-                    // Oran seçildiyse hepsine aynı oranı uygula (eğer tek oran girildiyse)
-                    currentDiscountVal = discountValues[index] !== undefined ? discountValues[index] : discountValues[0];
-                }
-
-                // Adet için de aynı mantık
-                let currentQty = quantityValues[index] !== undefined ? quantityValues[index] : (quantityValues[0] || "-");
-
-                let discountResult = calculateDiscount(parsed.price, discountType, currentDiscountVal);
-                let displayNormal = typeof parsed.price === 'number' ? formatPriceDisplay(parsed.price) + " TL" : parsed.price;
-                
-                products.push({
-                    code: parsed.code,
-                    name: parsed.name,
-                    normalPrice: displayNormal,
-                    discountPrice: discountResult.price,
-                    ratio: discountResult.ratio,
-                    quantity: currentQty || "-"
-                });
-            }
-        });
-
-        if (products.length === 0) {
-            alert("Lütfen geçerli ürün listesi girin.");
-            return;
-        }
-
-        storeList.forEach(store => {
-            let newCleanedStore = cleanTextForMatch(store);
-            let targetBlock = null;
-
-            if (newCleanedStore !== "-") {
-                targetBlock = allStoreBlocks.find(block => {
-                    let existingCleaned = cleanTextForMatch(block.storeName);
-                    return existingCleaned.substring(0, 5) === newCleanedStore.substring(0, 5);
-                });
-            }
-
-            if (targetBlock) {
-                targetBlock.productList = targetBlock.productList.concat(JSON.parse(JSON.stringify(products)));
+        loginType.addEventListener('change', (e) => {
+            if (e.target.value === 'admin') {
+                storeNameArea.classList.add('hidden');
+                adminKeyArea.classList.remove('hidden');
+                loginAdminKey.focus();
             } else {
-                allStoreBlocks.push({
-                    storeName: store,
-                    productList: JSON.parse(JSON.stringify(products))
-                });
+                storeNameArea.classList.remove('hidden');
+                adminKeyArea.classList.add('hidden');
             }
         });
 
-        updateTable();
-        
-        document.getElementById('rawInput').value = "";
-        document.getElementById('stores').value = "";
-        document.getElementById('discountValue').value = "";
-        document.getElementById('quantity').value = "";
-    }
-
-    function updateTable() {
-        let tbody = document.querySelector('#excelTable tbody');
-        tbody.innerHTML = "";
-
-        allStoreBlocks.forEach((block, blockIndex) => {
-            block.productList.forEach((prod, prodIndex) => {
-                let rowKey = `${blockIndex}-${prodIndex}`;
-                let row = document.createElement('tr');
-
-                if (editingRowKey === rowKey) {
-                    // Düzenleme Modu Satırı
-                    row.innerHTML = `
-                        <td>${prodIndex === 0 ? `<input type="text" id="editStore-${rowKey}" class="table-input" value="${block.storeName}">` : ""}</td>
-                        <td><input type="text" id="editCode-${rowKey}" class="table-input" value="${prod.code}"></td>
-                        <td><input type="text" id="editName-${rowKey}" class="table-input" value="${prod.name}"></td>
-                        <td><input type="text" id="editQty-${rowKey}" class="table-input text-center" value="${prod.quantity}"></td>
-                        <td><input type="text" id="editNormal-${rowKey}" class="table-input" value="${prod.normalPrice}"></td>
-                        <td><input type="text" id="editDiscount-${rowKey}" class="table-input" value="${prod.discountPrice}"></td>
-                        <td><input type="text" id="editRatio-${rowKey}" class="table-input text-center" value="${prod.ratio}"></td>
-                        <td class="text-center">
-                            <button class="btn-row btn-save" onclick="saveRow('${rowKey}', ${blockIndex}, ${prodIndex})">Kaydet</button>
-                        </td>
-                    `;
+        // Bölge Sorumlusu Giriş Şifresi Otomatik Tetikleyici
+        loginAdminKey.addEventListener('input', (e) => {
+            const currentPass = e.target.value.trim();
+            if (currentPass.length === 6) {
+                if (currentPass === '161225') {
+                    executeAdminLogin();
                 } else {
-                    // Normal Görünüm Satırı
-                    row.innerHTML = `
-                        <td class="col-fixed"><strong>${prodIndex === 0 ? block.storeName : ""}</strong></td>
-                        <td class="col-fixed">${prod.code}</td>
-                        <td class="col-fixed">${prod.name}</td>
-                        <td class="text-center">${prod.quantity}</td>
-                        <td class="col-dark-price">${prod.normalPrice}</td>
-                        <td class="col-dark-price">${prod.discountPrice}</td>
-                        <td class="col-ratio-yellow">${prod.ratio}</td>
-                        <td class="text-center">
-                            <button class="btn-row btn-edit" onclick="editRow('${rowKey}')">Düzenle</button>
-                            <button class="btn-row btn-delete" onclick="deleteRow(${blockIndex}, ${prodIndex})">Sil</button>
+                    alert('Hatalı Yönetici Kodu!');
+                    e.target.value = ""; 
+                }
+            }
+        });
+
+        btnEnterSystem.addEventListener('click', () => {
+            if (loginType.value !== 'admin') {
+                let storeName = loginStoreName.value.trim();
+                if (!storeName) return alert('Lütfen mağaza adınızı yazın!');
+                if(storeName.toLowerCase().startsWith("atatürk")) storeName = "Atatürk Cd.";
+                currentUser = { type: loginType.value, name: storeName };
+                currentSessionBadge.textContent = `${loginType.value} (${storeName})`;
+                adminStoreSelectArea.classList.add('hidden');
+                loginModal.classList.add('hidden');
+                initLiveSync();
+            } else {
+                const adminKey = loginAdminKey.value.trim();
+                if (adminKey === '161225') {
+                    executeAdminLogin();
+                } else {
+                    alert('Hatalı Yönetici Kodu!');
+                }
+            }
+        });
+
+        function executeAdminLogin() {
+            currentUser = { type: 'admin', name: 'Bölge Sorumlusu' };
+            currentSessionBadge.textContent = 'Bölge Sorumlusu';
+            adminControls.classList.remove('hidden');
+            btnUnlockSystem.classList.remove('hidden');
+            adminStoreSelectArea.classList.remove('hidden');
+            loginModal.classList.add('hidden');
+            initLiveSync();
+        }
+
+        btnLogout.addEventListener('click', () => {
+            if (confirm('Oturumu kapatmak istediğinize emin misiniz?')) {
+                window.location.reload(); 
+            }
+        });
+
+        btnSelectAllStores.addEventListener('click', () => {
+            const checkboxes = adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]');
+            allSelectToggle = !allSelectToggle;
+            checkboxes.forEach(cb => cb.checked = allSelectToggle);
+            btnSelectAllStores.textContent = allSelectToggle ? "Seçimi Kaldır" : "Tümünü Seç";
+        });
+
+        function updateAdminCheckboxes() {
+            if (currentUser.type !== 'admin') return;
+            const checkedStores = Array.from(adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            adminStoreCheckboxGroup.innerHTML = "";
+            let storesToRender = [...targetStoresBaseList];
+            
+            liveStoresList.forEach(store => {
+                if (!storesToRender.includes(store)) {
+                    storesToRender.push(store);
+                }
+            });
+
+            storesToRender.forEach(store => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-2 py-0.5 px-1 hover:bg-slate-100 rounded-lg transition-colors";
+                const isChecked = checkedStores.includes(store) ? "checked" : "";
+                div.innerHTML = `
+                    <input type="checkbox" value="${store}" id="cb_${store}" ${isChecked} class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer">
+                    <label for="cb_${store}" class="w-full cursor-pointer select-none">${store}</label>
+                `;
+                adminStoreCheckboxGroup.appendChild(div);
+            });
+        }
+
+        function initLiveSync() {
+            onSnapshot(query(systemCollection), (snapshot) => {
+                isSystemLocked = false;
+                snapshot.forEach(doc => {
+                    if (doc.data().status === 'sent') isSystemLocked = true;
+                });
+                if (isSystemLocked) {
+                    lockStatusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Rapor Gönderildi (Kilitli)`;
+                    lockStatusBadge.className = "px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-[11px] font-medium flex items-center gap-1";
+                    if (currentUser.type !== 'admin') {
+                        btnSubmitForm.disabled = true;
+                        btnSubmitForm.textContent = "Sistem Kilitli (Düzenleme Kapalı)";
+                        btnSubmitForm.className = "w-full mt-2 py-2.5 bg-slate-300 text-slate-500 font-semibold rounded-xl text-sm cursor-not-allowed";
+                    }
+                } else {
+                    lockStatusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Düzenlemeye Açık`;
+                    lockStatusBadge.className = "px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-medium flex items-center gap-1";
+                }
+            });
+
+            onSnapshot(campaignCollection, (snapshot) => {
+                tableBody.innerHTML = "";
+                localCampaignsCache = []; 
+                
+                if (snapshot.empty) {
+                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs">Henüz hiç veri girilmedi. İlk veriyi siz girin!</td></tr>`;
+                    liveStoresList = [];
+                    updateAdminCheckboxes();
+                    return;
+                }
+
+                let documents = [];
+                snapshot.forEach(doc => {
+                    const docData = { id: doc.id, ...doc.data() };
+                    documents.push(docData);
+                    localCampaignsCache.push(docData); 
+                });
+
+                documents.sort((a, b) => {
+                    if (a.storeName < b.storeName) return -1;
+                    if (a.storeName > b.storeName) return 1;
+                    return (b.timestamp || 0) - (a.timestamp || 0);
+                });
+
+                liveStoresList = [];
+                documents.forEach(docData => {
+                    if (!liveStoresList.includes(docData.storeName)) liveStoresList.push(docData.storeName);
+                });
+
+                updateAdminCheckboxes();
+                let lastStoreName = null;
+
+                documents.forEach(data => {
+                    const id = data.id;
+                    
+                    if (lastStoreName !== null && lastStoreName !== data.storeName) {
+                        const separatorTr = document.createElement('tr');
+                        separatorTr.className = "bg-slate-200/50 h-6 border-y border-slate-300/40";
+                        separatorTr.innerHTML = `<td colspan="7" class="py-1"></td>`;
+                        tableBody.appendChild(separatorTr);
+                    }
+                    
+                    lastStoreName = data.storeName;
+
+                    let combinedList = [...targetStoresBaseList];
+                    if(!combinedList.includes(data.storeName)) combinedList.push(data.storeName);
+                    const storeIndex = combinedList.indexOf(data.storeName) % 5;
+                    const colorClass = `store-color-${storeIndex}`;
+
+                    const isOwner = currentUser.type === 'admin' || (currentUser.name === data.storeName);
+                    const canEdit = isOwner && !isSystemLocked;
+
+                    const tr = document.createElement('tr');
+                    tr.className = `${colorClass} transition-colors border-b border-slate-100 hover:bg-slate-100/40`;
+                    
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 font-bold text-slate-900">${data.storeName}</td>
+                        <td class="py-3 px-3 text-slate-600 font-mono text-xs">${data.code}</td>
+                        <td class="py-3 px-3 text-slate-700 font-medium">${data.name}</td>
+                        <td class="py-3 px-3 text-center font-semibold text-slate-900">${data.quantity}</td>
+                        <td class="py-3 px-3 text-slate-600">${parseFloat(data.normalPrice).toFixed(2)} TL</td>
+                        <td class="py-3 px-3 text-blue-700 font-semibold">
+                            ${parseFloat(data.discountPrice).toFixed(2)} TL <span class="text-xs text-emerald-600 font-medium font-mono ml-1">(${data.ratio})</span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            ${canEdit ? `
+                                <button data-id="${id}" data-store="${data.storeName}" class="btn-edit text-blue-600 hover:text-blue-800 font-medium text-xs mr-3 cursor-pointer">Düzenle</button>
+                                <button data-id="${id}" class="btn-delete text-rose-600 hover:text-rose-800 font-medium text-xs cursor-pointer">Sil</button>
+                            ` : `<span class="text-xs text-slate-400 italic">${isSystemLocked ? 'Kilitli' : 'Okuma Modu'}</span>`}
                         </td>
                     `;
-                }
-                tbody.appendChild(row);
-            });
-
-            if (blockIndex < allStoreBlocks.length - 1) {
-                for(let i=0; i<2; i++) {
-                    let emptyRow = document.createElement('tr');
-                    emptyRow.className = "spacer-row";
-                    emptyRow.innerHTML = "<td colspan='8'></td>";
-                    tbody.appendChild(emptyRow);
-                }
-            }
-        });
-    }
-
-    function editRow(rowKey) {
-        editingRowKey = rowKey;
-        updateTable();
-    }
-
-    function saveRow(rowKey, blockIndex, prodIndex) {
-        let block = allStoreBlocks[blockIndex];
-        let prod = block.productList[prodIndex];
-
-        if (prodIndex === 0) {
-            let storeInputVal = document.getElementById(`editStore-${rowKey}`).value.trim();
-            block.storeName = storeInputVal || "-";
-        }
-
-        prod.code = document.getElementById(`editCode-${rowKey}`).value.trim();
-        prod.name = document.getElementById(`editName-${rowKey}`).value.trim();
-        prod.quantity = document.getElementById(`editQty-${rowKey}`).value.trim();
-        prod.normalPrice = document.getElementById(`editNormal-${rowKey}`).value.trim();
-        prod.discountPrice = document.getElementById(`editDiscount-${rowKey}`).value.trim();
-        prod.ratio = document.getElementById(`editRatio-${rowKey}`).value.trim();
-
-        editingRowKey = null;
-        updateTable();
-    }
-
-    function deleteRow(blockIndex, prodIndex) {
-        allStoreBlocks[blockIndex].productList.splice(prodIndex, 1);
-        
-        // Eğer blokta hiç ürün kalmadıysa bloğu tamamen uçur
-        if (allStoreBlocks[blockIndex].productList.length === 0) {
-            allStoreBlocks.splice(blockIndex, 1);
-        }
-        updateTable();
-    }
-
-    function editEmailAddress() {
-        let newEmail = prompt("Yeni alıcı e-posta adresini girin:", targetEmailAddress);
-        if (newEmail !== null && newEmail.trim() !== "") {
-            targetEmailAddress = newEmail.trim();
-            document.getElementById('currentEmailDisplay').innerText = targetEmailAddress;
-            localStorage.setItem('savedEmailAddress', targetEmailAddress);
-        }
-    }
-
-    function exportStyledExcelWithGridlines(triggerDownload) {
-        if (allStoreBlocks.length === 0) {
-            alert("Listede veri bulunamadı.");
-            return null;
-        }
-
-        let tableHtml = `
-            <table border="1" style="border-collapse:collapse; font-family:'Segoe UI',Arial,sans-serif;">
-                <colgroup>
-                    <col width="160">
-                    <col width="110">
-                    <col width="220">
-                    <col width="80">
-                    <col width="100">
-                    <col width="110">
-                    <col width="80">
-                </colgroup>
-                <thead>
-                    <tr style="background-color: #334155; color: #FFFFFF; font-weight: bold;" height="40">
-                        <th style="border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:11pt;">Mağaza Adı</div></th>
-                        <th style="border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:11pt;">Ürün Kodu</div></th>
-                        <th style="border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:11pt;">Ürün Adı</div></th>
-                        <th style="border: 1px solid #cbd5e1; text-align: center; vertical-align: middle; mso-number-format:'\\@';"><div style="font-size:11pt;">Adet</div></th>
-                        <th style="border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:11pt;">Fiyat</div></th>
-                        <th style="border: 1px solid #cbd5e1; text-align: left; vertical-align: middle; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:11pt;">Kamp. Fiyat</div></th>
-                        <th style="border: 1px solid #cbd5e1; text-align: center; vertical-align: middle; mso-number-format:'\\@';"><div style="font-size:11pt;">Oran</div></th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        allStoreBlocks.forEach((block, blockIndex) => {
-            block.productList.forEach((prod, prodIndex) => {
-                let storeVal = prodIndex === 0 ? `<b>${block.storeName}</b>` : "";
-                
-                tableHtml += `
-                    <tr height="32" style="vertical-align: middle;">
-                        <td style="border: 1px solid #cbd5e1; color: #000000; text-align: left; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:10pt;">${storeVal}</div></td>
-                        <td style="border: 1px solid #cbd5e1; color: #1E293B; text-align: left; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:10pt;">${prod.code}</div></td>
-                        <td style="border: 1px solid #cbd5e1; color: #1E293B; text-align: left; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:10pt;">${prod.name}</div></td>
-                        <td style="border: 1px solid #cbd5e1; color: #1E293B; text-align: center; mso-number-format:'\\@';"><div style="font-size:10pt;">${prod.quantity}</div></td>
-                        <td style="border: 1px solid #cbd5e1; font-weight: bold; color: #000000; text-align: left; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:10pt;">${prod.normalPrice}</div></td>
-                        <td style="border: 1px solid #cbd5e1; font-weight: bold; color: #000000; text-align: left; mso-number-format:'\\@';"><div style="margin-left:15px; font-size:10pt;">${prod.discountPrice}</div></td>
-                        <td style="border: 1px solid #cbd5e1; font-weight: bold; background-color: #FEF08A; color: #854D0E; text-align: center; mso-number-format:'\\@';"><div style="font-size:10pt;">${prod.ratio}</div></td>
-                    </tr>
-                `;
-            });
-
-            if (blockIndex < allStoreBlocks.length - 1) {
-                tableHtml += `
-                    <tr height="28"><td style="border:1px solid #cbd5e1;" colspan="7">&nbsp;</td></tr>
-                    <tr height="28"><td style="border:1px solid #cbd5e1;" colspan="7">&nbsp;</td></tr>
-                `;
-            }
-        });
-
-        tableHtml += `</tbody></table>`;
-
-        let excelTemplate = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head>
-                <meta charset="UTF-8">
-                </head>
-            <body>
-                ${tableHtml}
-            </body>
-            </html>
-        `;
-
-        let blob = new Blob([excelTemplate], { type: "application/vnd.ms-excel;charset=utf-8" });
-        
-        if (triggerDownload) {
-            let link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "Kampanya_Talep_Formu.xls";
-            link.click();
-            return null;
-        }
-        return blob;
-    }
-
-    async function shareOrMailExcel() {
-        if (allStoreBlocks.length === 0) {
-            alert("Önce listeye ürün eklemeli, sonra göndermelisiniz.");
-            return;
-        }
-
-        let excelBlob = exportStyledExcelWithGridlines(false);
-        if(!excelBlob) return;
-
-        let file = new File([excelBlob], "Kampanya_Talep_Formu.xls", { type: excelBlob.type });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: 'Campanya Talep Formu',
-                    text: 'Kolay gelsin Fatma Hanım,\n\nKampanya talebimiz vardır ilgilenirseniz sevinirim.\n\nİyi çalışmalar.'
+                    tableBody.appendChild(tr);
                 });
-            } catch (err) {
-                fallbackMailMethod();
-            }
-        } else {
-            fallbackMailMethod();
+
+                document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', handleEdit));
+                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', handleDelete));
+            });
         }
-    }
 
-    function fallbackMailMethod() {
-        exportStyledExcelWithGridlines(true);
-        alert("Kampanya Excel dosyanız indirildi!\n\nMail ekranında dosyayı eklemeyi unutmayın.");
-        let subject = encodeURIComponent("Kampanya Talebi Hk.");
-        let body = encodeURIComponent("Kolay gelsin Fatma Hanım,\n\nKampanya talebimiz vardır ilgilenirseniz sevinirim.\n\nİyi çalışmalar.");
-        window.location.href = `mailto:${targetEmailAddress}?subject=${subject}&body=${body}`;
-    }
+        campaignForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isSystemLocked && currentUser.type !== 'admin') return alert('Sistem kilitli!');
 
-    // --- JET HIZINDA AÇILMA MOTORU (SERVICE WORKER) ---
-    if ('serviceWorker' in navigator) {
-        const swCode = `
-            const CACHE_NAME = 'kampanya-otomasyon-cache-v2';
-            const ASSETS = [location.pathname];
-            self.addEventListener('install', e => {
-                e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
+            const docId = docIdInput.value;
+            const inputProductCode = productCodeInput.value.trim();
+            const normP = parseFloat(normalPriceInput.value);
+            const discP = parseFloat(discountValueInput.value);
+
+            let calculatedRatio = "0%";
+            if(normP > 0 && normP > discP) {
+                const ratioNum = ((normP - discP) / normP) * 100;
+                calculatedRatio = `%${Math.round(ratioNum)}`;
+            } else if (normP === discP) {
+                calculatedRatio = "%0";
+            } else {
+                calculatedRatio = "Fiyat Artışı";
+            }
+
+            const baseCampaignData = {
+                code: inputProductCode,
+                name: productNameInput.value.trim(),
+                normalPrice: normP,
+                discountPrice: discP,
+                ratio: calculatedRatio,
+                quantity: parseInt(quantityInput.value),
+                timestamp: new Date().getTime()
+            };
+
+            if (!docId) {
+                if (currentUser.type === 'admin') {
+                    const selectedStores = Array.from(adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                    const manualStore = adminManualStoreName.value.trim();
+                    if (manualStore) selectedStores.push(manualStore);
+
+                    if (selectedStores.length === 0) {
+                        return alert('Lütfen kampanya eklenecek en az bir mağaza seçin veya yeni mağaza adı yazın!');
+                    }
+
+                    for (const store of selectedStores) {
+                        const isDuplicate = localCampaignsCache.some(item => item.storeName === store && item.code === inputProductCode);
+                        if (isDuplicate) {
+                            return alert(`"${store}" mağazası için "${inputProductCode}" kodlu ürün listede zaten mevcut! Lütfen kontrol edin.`);
+                        }
+                    }
+
+                    try {
+                        const addPromises = selectedStores.map(store => {
+                            return addDoc(campaignCollection, { ...baseCampaignData, storeName: store });
+                        });
+                        await Promise.all(addPromises);
+                    } catch(err) { alert("Hata oluştu!"); return; }
+
+                } else {
+                    const isDuplicate = localCampaignsCache.some(item => item.storeName === currentUser.name && item.code === inputProductCode);
+                    if (isDuplicate) {
+                        return alert(`"${inputProductCode}" kodlu ürün bu mağaza için zaten eklenmiş! Mükerrer kayıt ekleyemezsiniz.`);
+                    }
+
+                    try {
+                        await addDoc(campaignCollection, { ...baseCampaignData, storeName: currentUser.name });
+                    } catch(err) { alert("Hata oluştu!"); return; }
+                }
+            } else {
+                try {
+                    let updatedStoreName = currentUser.name;
+                    if (currentUser.type === 'admin') {
+                        const manualName = adminManualStoreName.value.trim();
+                        if (manualName) {
+                            updatedStoreName = manualName;
+                        } else {
+                            const checkedCb = adminStoreCheckboxGroup.querySelector('input[type="checkbox"]:checked');
+                            updatedStoreName = checkedCb ? checkedCb.value : targetStoresBaseList[0];
+                        }
+                    }
+                    await updateDoc(doc(db, "campaigns", docId), { ...baseCampaignData, storeName: updatedStoreName });
+                } catch(err) { alert("Hata oluştu!"); return; }
+            }
+
+            campaignForm.reset();
+            docIdInput.value = "";
+            adminManualStoreName.value = ""; 
+            allSelectToggle = false;
+            if (btnSelectAllStores) btnSelectAllStores.textContent = "Tümünü Seç";
+            if(currentUser.type === 'admin') {
+                adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            }
+            btnSubmitForm.textContent = "Listeye Ekle / Güncelle";
+            btnCancelEdit.classList.add('hidden');
+        });
+
+        async function handleEdit(e) {
+            const id = e.target.getAttribute('data-id');
+            const targetStore = e.target.getAttribute('data-store');
+            const tr = e.target.closest('tr');
+            
+            productCodeInput.value = tr.cells[1].textContent;
+            productNameInput.value = tr.cells[2].textContent;
+            quantityInput.value = tr.cells[3].textContent;
+            normalPriceInput.value = parseFloat(tr.cells[4].textContent);
+            discountValueInput.value = parseFloat(tr.cells[5].textContent);
+            
+            if (currentUser.type === 'admin') {
+                adminManualStoreName.value = "";
+                const checkboxes = adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]');
+                let found = false;
+                checkboxes.forEach(cb => {
+                    if (cb.value === targetStore) {
+                        cb.checked = true;
+                        found = true;
+                    } else {
+                        cb.checked = false;
+                    }
+                });
+                if (!found) {
+                    adminManualStoreName.value = targetStore;
+                }
+            }
+            docIdInput.value = id;
+            btnSubmitForm.textContent = "Değişiklikleri Kaydet";
+            btnCancelEdit.classList.remove('hidden');
+        }
+
+        async function handleDelete(e) {
+            if (confirm('Silmek istediğinize emin misiniz?')) {
+                const id = e.target.getAttribute('data-id');
+                await deleteDoc(doc(db, "campaigns", id));
+            }
+        }
+
+        btnCancelEdit.addEventListener('click', () => {
+            campaignForm.reset();
+            docIdInput.value = "";
+            adminManualStoreName.value = "";
+            allSelectToggle = false;
+            if (btnSelectAllStores) btnSelectAllStores.textContent = "Tümünü Seç";
+            if(currentUser.type === 'admin') {
+                adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            }
+            btnSubmitForm.textContent = "Listeye Ekle / Güncelle";
+            btnCancelEdit.classList.add('hidden');
+        });
+
+        document.getElementById('btnExcelDownload').addEventListener('click', async () => {
+            const querySnapshot = await getDocs(campaignCollection);
+            let documents = [];
+            querySnapshot.forEach(doc => documents.push(doc.data()));
+            documents.sort((a,b) => a.storeName.localeCompare(b.storeName));
+
+            const dataMatrix = [["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Talep Edilen Adet", "Normal Fiyat (TL)", "İstenen Fiyat (TL)", "İndirim Oranı"]];
+            documents.forEach(d => {
+                dataMatrix.push([d.storeName, d.code, d.name, d.quantity, d.normalPrice, d.discountPrice, d.ratio]);
             });
-            self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-            self.addEventListener('fetch', e => {
-                e.respondWith(caches.match(e.request).then(cachedResponse => cachedResponse || fetch(e.request)));
-            });
-        `;
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        navigator.serviceWorker.register(URL.createObjectURL(blob));
-    }
-</script>
 
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(dataMatrix);
+            XLSX.utils.book_append_sheet(wb, ws, "Talepler");
+            XLSX.writeFile(wb, `Kampanya_Talepleri_${new Date().toLocaleDateString('tr-TR')}.xlsx`);
+        });
+
+        document.getElementById('btnSendMail').addEventListener('click', async () => {
+            if (confirm('Kampanyayı kilitleyip Mail şablonunu açmak istiyor musunuz?')) {
+                const querySnapshot = await getDocs(systemCollection);
+                if (querySnapshot.empty) {
+                    await addDoc(systemCollection, { status: 'sent' });
+                } else {
+                    await updateDoc(doc(db, "systemControl", querySnapshot.docs[0].id), { status: 'sent' });
+                }
+                const emailTarget = "fatma.hanim@example.com"; 
+                // 📌 Konu kısmı tamamen küçük harfle "Kampanya talebi hk." olarak güncellendi
+                const subject = encodeURIComponent("kampanya talebi hk.");
+                const body = encodeURIComponent("Fatma Hanım kolay gelsin,\n\nKampanya talebimiz vardır. İlgilenirseniz seviniriz.\n\nİyi çalışmalar.");
+                window.location.href = `mailto:${emailTarget}?subject=${subject}&body=${body}`;
+            }
+        });
+
+        btnUnlockSystem.addEventListener('click', async () => {
+            if (confirm('Sistem sıfırlanacak ve yeni bir kampanya dönemi başlayacaktır. Eski veriler silinecektir. Emin misiniz?')) {
+                try {
+                    const systemSnapshot = await getDocs(systemCollection);
+                    if (!systemSnapshot.empty) {
+                        await updateDoc(doc(db, "systemControl", systemSnapshot.docs[0].id), { status: 'open' });
+                    }
+                    const campaignSnapshot = await getDocs(campaignCollection);
+                    const deletePromises = [];
+                    campaignSnapshot.forEach((docSnap) => {
+                        deletePromises.push(deleteDoc(doc(db, "campaigns", docSnap.id)));
+                    });
+                    await Promise.all(deletePromises);
+                    btnSubmitForm.disabled = false;
+                    btnSubmitForm.textContent = "Listeye Ekle / Güncelle";
+                    btnSubmitForm.className = "w-full mt-2 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm cursor-pointer";
+                    alert('Sistem yeni kampanya dönemine açıldı, veriler sıfırlandı!');
+                } catch (err) {
+                    alert("Hata oluştu!");
+                }
+            }
+        });
+    </script>
 </body>
 </html>
