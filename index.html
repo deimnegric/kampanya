@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- Excel indirmek için SheetJS -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .blur-bg { backdrop-filter: blur(8px); }
@@ -587,21 +586,59 @@
         });
 
         document.getElementById('btnExcelDownload').addEventListener('click', async () => {
-            const querySnapshot = await getDocs(campaignCollection);
-            let documents = [];
-            querySnapshot.forEach(doc => documents.push(doc.data()));
-            documents.sort((a,b) => a.storeName.localeCompare(b.storeName));
+    const querySnapshot = await getDocs(campaignCollection);
+    let docs = [];
+    querySnapshot.forEach(d => docs.push(d.data()));
+    docs.sort((a,b) => a.storeName.localeCompare(b.storeName));
 
-            const dataMatrix = [["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Talep Edilen Adet", "Normal Fiyat (TL)", "İstenen Fiyat (TL)", "İndirim Oranı"]];
-            documents.forEach(d => {
-                dataMatrix.push([d.storeName, d.code, d.name, d.quantity, d.normalPrice, d.discountPrice, d.ratio]);
-            });
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+    <?mso-application progid="Excel.Sheet"?>
+    <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+    <Styles>
+        <Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#203764" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center"/></Style>
+        <Style ss:ID="Store"><Font ss:Bold="1"/><Alignment ss:Vertical="Center"/></Style>
+        <Style ss:ID="PriceGray"><Interior ss:Color="#EAEAEA" ss:Pattern="Solid"/><Font ss:Bold="1"/><Alignment ss:Horizontal="Right"/></Style>
+        <Style ss:ID="PriceNormal"><Alignment ss:Horizontal="Right"/></Style>
+        <Style ss:ID="Ratio"><Interior ss:Color="#FFE599" ss:Pattern="Solid"/><Font ss:Bold="1"/><Alignment ss:Horizontal="Center"/></Style>
+    </Styles>
+    <Worksheet ss:Name="Talepler"><Table>`;
 
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(dataMatrix);
-            XLSX.utils.book_append_sheet(wb, ws, "Talepler");
-            XLSX.writeFile(wb, `Kampanya_Talepleri_${new Date().toLocaleDateString('tr-TR')}.xlsx`);
-        });
+    xml += `<Row><Cell ss:StyleID="Header"><Data ss:Type="String">Mağaza Adı</Data></Cell>
+                <Cell ss:StyleID="Header"><Data ss:Type="String">Ürün Kodu</Data></Cell>
+                <Cell ss:StyleID="Header"><Data ss:Type="String">Ürün Adı</Data></Cell>
+                <Cell ss:StyleID="Header"><Data ss:Type="String">Adet</Data></Cell>
+                <Cell ss:StyleID="Header"><Data ss:Type="String">Fiyat</Data></Cell>
+                <Cell ss:StyleID="Header"><Data ss:Type="String">Kamp. Fiyat</Data></Cell>
+                <Cell ss:StyleID="Header"><Data ss:Type="String">Oran</Data></Cell></Row>`;
+
+    let lastStore = "";
+    docs.forEach(d => {
+        if (lastStore !== "" && lastStore !== d.storeName) {
+            xml += `<Row><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/></Row>
+                    <Row><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/></Row>`;
+        }
+        let isFirst = (lastStore !== d.storeName);
+        let priceStyle = isFirst ? ' ss:StyleID="PriceGray"' : ' ss:StyleID="PriceNormal"';
+        xml += `<Row>
+            <Cell ss:StyleID="Store"><Data ss:Type="String">${isFirst ? d.storeName : ""}</Data></Cell>
+            <Cell><Data ss:Type="String">${d.code}</Data></Cell>
+            <Cell><Data ss:Type="String">${d.name}</Data></Cell>
+            <Cell><Data ss:Type="Number">${d.quantity}</Data></Cell>
+            <Cell${priceStyle}><Data ss:Type="Number">${d.normalPrice}</Data></Cell>
+            <Cell${priceStyle}><Data ss:Type="Number">${d.discountPrice}</Data></Cell>
+            <Cell ss:StyleID="Ratio"><Data ss:Type="String">${d.ratio}</Data></Cell>
+        </Row>`;
+        lastStore = d.storeName;
+    });
+
+    xml += `</Table></Worksheet></Workbook>`;
+    const blob = new Blob([xml], { type: "application/vnd.ms-excel" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Kampanya_Talepleri.xls";
+    a.click();
+});
 
         document.getElementById('btnSendMail').addEventListener('click', async () => {
             if (confirm('Kampanyayı kilitleyip Mail şablonunu açmak istiyor musunuz?')) {
