@@ -3,29 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kampanya Talep</title>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <link rel="icon" href="favicon.jpeg" type="image/jpeg">
-    <link rel="shortcut icon" href="favicon.jpeg" type="image/jpeg">
-
-    <link href="https://fonts.googleapis.com/css2=family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Kampanya Talep </title>
+    <!-- Google Fonts & Tailwind CSS CDN -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Excel indirmek için SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .blur-bg { backdrop-filter: blur(8px); }
-        /* Mağaza bazlı soft pastel canlı panel renkleri */
-        .store-color-0 { background-color: rgba(239, 246, 255, 0.8); }
-        .store-color-1 { background-color: rgba(240, 253, 244, 0.8); }
-        .store-color-2 { background-color: rgba(254, 242, 242, 0.8); }
-        .store-color-3 { background-color: rgba(255, 251, 235, 0.8); }
-        .store-color-4 { background-color: rgba(250, 245, 255, 0.8); }
+        /* Mağaza bazlı soft pastel renkler */
+        .store-color-0 { background-color: rgba(239, 246, 255, 0.8); } /* Soft Mavi */
+        .store-color-1 { background-color: rgba(240, 253, 244, 0.8); } /* Soft Yeşil */
+        .store-color-2 { background-color: rgba(254, 242, 242, 0.8); } /* Soft Kırmızı */
+        .store-color-3 { background-color: rgba(255, 251, 235, 0.8); } /* Soft Sarı */
+        .store-color-4 { background-color: rgba(250, 245, 255, 0.8); } /* Soft Mor */
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen antialiased">
 
+    <!-- 🔑 GİRİŞ MODAL EKRANI -->
     <div id="loginModal" class="fixed inset-0 bg-slate-900/60 blur-bg z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-100">
             <div class="text-center mb-6">
+                <!-- 📌 Başlık Kampanya Talep Olarak Güncellendi -->
                 <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Kampanya Talep</h2>
                 <p class="text-sm text-slate-500 mt-1">Devam etmek için lütfen giriş yapın</p>
             </div>
@@ -54,25 +55,30 @@
         </div>
     </div>
 
+    <!-- 📱 ANA PANEL -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
+        <!-- ÜST BAR -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-6 gap-4">
             <div class="flex items-center gap-3 justify-between w-full sm:w-auto">
                 <div class="flex items-center gap-3">
                     <div class="p-2.5 bg-blue-50 rounded-xl text-blue-600 font-bold text-lg">KT</div>
                     <div>
-                        <h1 class="font-bold text-lg text-slate-900 tracking-tight">Campanya Talep</h1>
+                        <!-- 📌 Üst Logo Alanı Başlığı Kampanya Talep Olarak Güncellendi -->
+                        <h1 class="font-bold text-lg text-slate-900 tracking-tight">Kampanya Talep</h1>
                         <p class="text-xs text-slate-500 flex items-center gap-1.5 flex-wrap">
                             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             Aktif Kullanıcı Oturumu: <span id="currentSessionBadge" class="font-semibold text-slate-700">Yükleniyor...</span>
                         </p>
                     </div>
                 </div>
+                <!-- 🚪 Çıkış Butonu -->
                 <button id="btnLogout" class="sm:ml-4 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl transition-colors border border-rose-200 flex items-center gap-1 cursor-pointer">
                     Çıkış Yap
                 </button>
             </div>
             
+            <!-- Yönetici Kontrolleri -->
             <div id="adminControls" class="hidden flex flex-wrap items-center gap-2">
                 <button id="btnExcelDownload" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
                     Excel Dosyası İndir
@@ -88,6 +94,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
+            <!-- VERİ GİRİŞ FORMU -->
             <div class="lg:col-span-1 bg-white rounded-2xl p-5 shadow-sm border border-slate-100 h-fit">
                 <div class="mb-4">
                     <h2 class="font-bold text-slate-900">Ürün Giriş Formu</h2>
@@ -97,12 +104,18 @@
                 <form id="campaignForm" class="space-y-3.5">
                     <input type="hidden" id="docId">
                     
+                    <!-- 👑 Bölge Sorumlusu Çoklu Mağaza Seçim Alanı -->
                     <div id="adminStoreSelectArea" class="hidden p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100 space-y-2">
                         <div class="flex items-center justify-between border-b border-blue-100/70 pb-1.5">
                             <label class="block text-xs font-bold text-blue-800 uppercase tracking-wider">Kampanya Yapılacak Mağazalar</label>
                             <button type="button" id="btnSelectAllStores" class="text-[11px] bg-blue-600 text-white px-2 py-0.5 rounded-lg hover:bg-blue-700 font-medium transition-colors cursor-pointer">Tümünü Seç</button>
                         </div>
-                        <div id="adminStoreCheckboxGroup" class="max-h-44 overflow-y-auto space-y-1.5 pr-1 text-xs text-slate-700 font-medium"></div>
+                        
+                        <!-- Dinamik İşaretleme Kutuları Grubu -->
+                        <div id="adminStoreCheckboxGroup" class="max-h-44 overflow-y-auto space-y-1.5 pr-1 text-xs text-slate-700 font-medium">
+                            <!-- Mağazalar dinamik ve sabit liste olarak buraya gelecek -->
+                        </div>
+                        
                         <div class="pt-1.5 border-t border-blue-100/70">
                             <input type="text" id="adminManualStoreName" placeholder="Yeni Mağaza Ekle (Listede Yoksa)" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs">
                         </div>
@@ -142,11 +155,12 @@
                 </form>
             </div>
 
+            <!-- CANLI TABLO -->
             <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
                 <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
                         <h2 class="font-bold text-slate-900 text-sm">Tüm Mağazaların Canlı Listesi</h2>
-                        <p class="text-xs text-slate-400 mt-0.5">Farklı mağaza blokları arasında boşluk bırakılır.</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Farklı mağaza blokları arasında 2 satırlık boşluk bırakılır.</p>
                     </div>
                     <div id="lockStatusBadge" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-medium flex items-center gap-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Düzenlemeye Açık
@@ -157,19 +171,18 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider font-semibold">
-                                <th class="py-3 px-4">Mağaza Adı</th>
-                                <th class="py-3 px-3">Ürün Kodu</th>
+                                <th class="py-3 px-4">Mağaza</th>
+                                <th class="py-3 px-3">Kod</th>
                                 <th class="py-3 px-3">Ürün Adı</th>
                                 <th class="py-3 px-3 text-center">Adet</th>
-                                <th class="py-3 px-3">Fiyat</th>
-                                <th class="py-3 px-3">Kamp. Fiyat</th>
-                                <th class="py-3 px-3 text-center">Oran</th>
+                                <th class="py-3 px-3">Normal Fiyat</th>
+                                <th class="py-3 px-3">İstenen Fiyat (Oran)</th>
                                 <th class="py-3 px-4 text-right">İşlem</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="text-sm">
                             <tr>
-                                <td colspan="8" class="text-center py-8 text-slate-400 text-xs">Yükleniyor veya henüz veri girilmedi...</td>
+                                <td colspan="7" class="text-center py-8 text-slate-400 text-xs">Yükleniyor veya henüz veri girilmedi...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -179,6 +192,7 @@
         </div>
     </div>
 
+    <!-- FIREBASE & INTERACTION SCRIPT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { 
@@ -250,6 +264,7 @@
             }
         });
 
+        // Bölge Sorumlusu Giriş Şifresi Otomatik Tetikleyici
         loginAdminKey.addEventListener('input', (e) => {
             const currentPass = e.target.value.trim();
             if (currentPass.length === 6) {
@@ -354,7 +369,7 @@
                 localCampaignsCache = []; 
                 
                 if (snapshot.empty) {
-                    tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 text-xs">Henüz hiç veri girilmedi. İlk veriyi siz girin!</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs">Henüz hiç veri girilmedi. İlk veriyi siz girin!</td></tr>`;
                     liveStoresList = [];
                     updateAdminCheckboxes();
                     return;
@@ -383,16 +398,12 @@
 
                 documents.forEach(data => {
                     const id = data.id;
-                    let displayStoreName = data.storeName;
                     
                     if (lastStoreName !== null && lastStoreName !== data.storeName) {
                         const separatorTr = document.createElement('tr');
                         separatorTr.className = "bg-slate-200/50 h-6 border-y border-slate-300/40";
-                        separatorTr.innerHTML = `<td colspan="8" class="py-1"></td>`;
+                        separatorTr.innerHTML = `<td colspan="7" class="py-1"></td>`;
                         tableBody.appendChild(separatorTr);
-                    } else if (lastStoreName === data.storeName) {
-                        // Görseldeki gibi: Aynı mağaza bloğunda sonraki satırlarda isim boş bırakılır
-                        displayStoreName = "";
                     }
                     
                     lastStoreName = data.storeName;
@@ -409,14 +420,15 @@
                     tr.className = `${colorClass} transition-colors border-b border-slate-100 hover:bg-slate-100/40`;
                     
                     tr.innerHTML = `
-                        <td class="py-3 px-4 font-bold text-slate-900">${displayStoreName.toLowerCase()}</td>
+                        <td class="py-3 px-4 font-bold text-slate-900">${data.storeName}</td>
                         <td class="py-3 px-3 text-slate-600 font-mono text-xs">${data.code}</td>
                         <td class="py-3 px-3 text-slate-700 font-medium">${data.name}</td>
                         <td class="py-3 px-3 text-center font-semibold text-slate-900">${data.quantity}</td>
-                        <td class="py-3 px-3 text-slate-900 font-bold">${parseFloat(data.normalPrice).toLocaleString('tr-TR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} TL</td>
-                        <td class="py-3 px-3 text-slate-900 font-bold">${parseFloat(data.discountPrice).toLocaleString('tr-TR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} TL</td>
-                        <td class="py-3 px-3 text-center bg-amber-100/60 font-bold text-amber-800 rounded-sm">${data.ratio}</td>
-                        <td class="py-3 px-4 text-right bg-white/20">
+                        <td class="py-3 px-3 text-slate-600">${parseFloat(data.normalPrice).toFixed(2)} TL</td>
+                        <td class="py-3 px-3 text-blue-700 font-semibold">
+                            ${parseFloat(data.discountPrice).toFixed(2)} TL <span class="text-xs text-emerald-600 font-medium font-mono ml-1">(${data.ratio})</span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
                             ${canEdit ? `
                                 <button data-id="${id}" data-store="${data.storeName}" class="btn-edit text-blue-600 hover:text-blue-800 font-medium text-xs mr-3 cursor-pointer">Düzenle</button>
                                 <button data-id="${id}" class="btn-delete text-rose-600 hover:text-rose-800 font-medium text-xs cursor-pointer">Sil</button>
@@ -443,11 +455,11 @@
             let calculatedRatio = "0%";
             if(normP > 0 && normP > discP) {
                 const ratioNum = ((normP - discP) / normP) * 100;
-                calculatedRatio = `${Math.round(ratioNum)}%`;
+                calculatedRatio = `%${Math.round(ratioNum)}`;
             } else if (normP === discP) {
-                calculatedRatio = "0%";
+                calculatedRatio = "%0";
             } else {
-                calculatedRatio = "Artış";
+                calculatedRatio = "Fiyat Artışı";
             }
 
             const baseCampaignData = {
@@ -473,7 +485,7 @@
                     for (const store of selectedStores) {
                         const isDuplicate = localCampaignsCache.some(item => item.storeName === store && item.code === inputProductCode);
                         if (isDuplicate) {
-                            return alert(`"${store}" mağazası için "${inputProductCode}" kodlu ürün listede zaten mevcut!`);
+                            return alert(`"${store}" mağazası için "${inputProductCode}" kodlu ürün listede zaten mevcut! Lütfen kontrol edin.`);
                         }
                     }
 
@@ -487,7 +499,7 @@
                 } else {
                     const isDuplicate = localCampaignsCache.some(item => item.storeName === currentUser.name && item.code === inputProductCode);
                     if (isDuplicate) {
-                        return alert(`"${inputProductCode}" kodlu ürün bu mağaza için zaten eklenmiş!`);
+                        return alert(`"${inputProductCode}" kodlu ürün bu mağaza için zaten eklenmiş! Mükerrer kayıt ekleyemezsiniz.`);
                     }
 
                     try {
@@ -530,8 +542,8 @@
             productCodeInput.value = tr.cells[1].textContent;
             productNameInput.value = tr.cells[2].textContent;
             quantityInput.value = tr.cells[3].textContent;
-            normalPriceInput.value = parseFloat(tr.cells[4].textContent.replace(/[^\d,.-]/g, '').replace(',', '.'));
-            discountValueInput.value = parseFloat(tr.cells[5].textContent.replace(/[^\d,.-]/g, '').replace(',', '.'));
+            normalPriceInput.value = parseFloat(tr.cells[4].textContent);
+            discountValueInput.value = parseFloat(tr.cells[5].textContent);
             
             if (currentUser.type === 'admin') {
                 adminManualStoreName.value = "";
@@ -574,165 +586,21 @@
             btnCancelEdit.classList.add('hidden');
         });
 
-        // 📊 GÖRSELDEKİ STİLE BİREBİR UYGUN RENKLİ EXCEL DOWNLOAD SİSTEMİ
-        // 📊 GÖRSELDEKİ İSTEKLERE BİREBİR UYGUN EXCEL ÜRETİCİ
-document.getElementById('btnExcelDownload').addEventListener('click', async () => {
-    const querySnapshot = await getDocs(campaignCollection);
-    let documents = [];
-    querySnapshot.forEach(doc => documents.push(doc.data()));
-    // Mağaza adına göre alfabetik sıralama
-    documents.sort((a,b) => a.storeName.localeCompare(b.storeName));
+        document.getElementById('btnExcelDownload').addEventListener('click', async () => {
+            const querySnapshot = await getDocs(campaignCollection);
+            let documents = [];
+            querySnapshot.forEach(doc => documents.push(doc.data()));
+            documents.sort((a,b) => a.storeName.localeCompare(b.storeName));
 
-    // Birebir görseldeki Excel XML ve CSS yapısı tasarımı
-    let excelTemplate = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-    <head>
-        <meta charset="UTF-8">
-        <style>
-            table { border-collapse: collapse; font-family: Arial, sans-serif; }
-            td, th { border: 1px solid #D9D9D9; padding: 6px 8px; font-size: 10pt; vertical-align: middle; }
-            th { background-color: #2C3E50; color: #FFFFFF; font-size: 11pt; font-weight: bold; border-bottom: 2px solid #000000; text-align: left; }
-            .center { text-align: center; }
-            .right { text-align: right; }
-            .store-title { font-weight: bold; font-size: 11pt; color: #000000; text-align: left; }
-            .price-style { font-weight: bold; color: #000000; text-align: right; }
-            .price-gray-style { font-weight: bold; color: #000000; text-align: right; background-color: #EAEAEA; }
-            .ratio-style { background-color: #FFE599; color: #7F6000; font-weight: bold; text-align: center; }
-            .empty-row { height: 20px; border: none; }
-        </style>
-    </head>
-    <body>
-        <table>
-            <thead>
-                <tr>
-                    <th>Mağaza Adı</th>
-                    <th>Ürün Kodu</th>
-                    <th>Ürün Adı</th>
-                    <th class="center">Adet</th>
-                    <th class="right">Fiyat</th>
-                    <th class="right">Kamp. Fiyat</th>
-                    <th class="center">Oran</th>
-                </tr>
-            </thead>
-            <tbody>`;
-
-    let lastStore = "";
-    documents.forEach(d => {
-        let currentStoreNameDisplay = d.storeName.toLowerCase();
-        let isFirstOfBlock = false;
-
-        // Mağaza değiştiğinde 2 satır boşluk ekleme kuralı
-        if (lastStore !== "" && lastStore !== d.storeName) {
-            excelTemplate += `
-            <tr class="empty-row"><td colspan="7" style="border:none; border-bottom: 1px solid #D9D9D9;"></td></tr>
-            <tr class="empty-row"><td colspan="7" style="border:none;"></td></tr>`;
-        }
-
-        // Mağaza ismi ilk satırda görünür, altındakilerde gizlenir
-        if (currentStoreNameDisplay === lastStore) {
-            currentStoreNameDisplay = "";
-        } else {
-            lastStore = currentStoreNameDisplay;
-            isFirstOfBlock = true; // Sadece bloğun ilk satırını yakala
-        }
-
-        // Eğer bloğun ilk satırıysa fiyatı grileştir, değilse normal
-        let priceClass = isFirstOfBlock ? "price-gray-style" : "price-style";
-
-        excelTemplate += `
-            <tr>
-                <td class="store-title">${currentStoreNameDisplay}</td>
-                <td style="mso-number-format:'\\@';">${d.code}</td>
-                <td>${d.name.toLowerCase()}</td>
-                <td class="center">${d.quantity}</td>
-                <td class="${priceClass}">${parseFloat(d.normalPrice).toLocaleString('tr-TR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} TL</td>
-                <td class="${priceClass}">${parseFloat(d.discountPrice).toLocaleString('tr-TR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} TL</td>
-                <td class="ratio-style">${d.ratio}</td>
-            </tr>`;
-    });
-
-    excelTemplate += `
-            </tbody>
-        </table>
-    </body>
-    </html>`;
-
-    const blob = new Blob([excelTemplate], { type: "application/vnd.ms-excel" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Kampanya_Talepleri_${new Date().toLocaleDateString('tr-TR')}.xls`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-});
-
-            // Birebir görseldeki Excel XML ve CSS yapısı tasarımı
-            let excelTemplate = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    table { border-collapse: collapse; font-family: Arial, sans-serif; }
-                    td, th { border: 1px solid #D9D9D9; padding: 6px 8px; font-size: 10pt; vertical-align: middle; }
-                    th { background-color: #2C3E50; color: #FFFFFF; font-size: 11pt; font-weight: bold; border-bottom: 2px solid #000000; text-align: left; }
-                    .center { text-align: center; }
-                    .right { text-align: right; }
-                    .store-title { font-weight: bold; font-size: 11pt; color: #000000; text-align: left; }
-                    .price-style { font-weight: bold; color: #000000; text-align: right; }
-                    .ratio-style { background-color: #FFE599; color: #7F6000; font-weight: bold; text-align: center; }
-                </style>
-            </head>
-            <body>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Mağaza Adı</th>
-                            <th>Ürün Kodu</th>
-                            <th>Ürün Adı</th>
-                            <th class="center">Adet</th>
-                            <th class="right">Fiyat</th>
-                            <th class="right">Kamp. Fiyat</th>
-                            <th class="center">Oran</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-
-            let lastStore = "";
+            const dataMatrix = [["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Talep Edilen Adet", "Normal Fiyat (TL)", "İstenen Fiyat (TL)", "İndirim Oranı"]];
             documents.forEach(d => {
-                let currentStoreNameDisplay = d.storeName.toLowerCase();
-                if (currentStoreNameDisplay === lastStore) {
-                    currentStoreNameDisplay = ""; // Üst üste binen mağazalarda alt satırları boş bırakma kuralı
-                } else {
-                    lastStore = currentStoreNameDisplay;
-                }
-
-                excelTemplate += `
-                    <tr>
-                        <td class="store-title">${currentStoreNameDisplay}</td>
-                        <td style="mso-number-format:'\\@';">${d.code}</td>
-                        <td>${d.name.toLowerCase()}</td>
-                        <td class="center">${d.quantity}</td>
-                        <td class="price-style">${parseFloat(d.normalPrice).toLocaleString('tr-TR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} TL</td>
-                        <td class="price-style">${parseFloat(d.discountPrice).toLocaleString('tr-TR', {minimumFractionDigits: 0, maximumFractionDigits: 2})} TL</td>
-                        <td class="ratio-style">${d.ratio}</td>
-                    </tr>`;
+                dataMatrix.push([d.storeName, d.code, d.name, d.quantity, d.normalPrice, d.discountPrice, d.ratio]);
             });
 
-            excelTemplate += `
-                    </tbody>
-                </table>
-            </body>
-            </html>`;
-
-            const blob = new Blob([excelTemplate], { type: "application/vnd.ms-excel" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `Kampanya_Talepleri_${new Date().toLocaleDateString('tr-TR')}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(dataMatrix);
+            XLSX.utils.book_append_sheet(wb, ws, "Talepler");
+            XLSX.writeFile(wb, `Kampanya_Talepleri_${new Date().toLocaleDateString('tr-TR')}.xlsx`);
         });
 
         document.getElementById('btnSendMail').addEventListener('click', async () => {
@@ -744,7 +612,8 @@ document.getElementById('btnExcelDownload').addEventListener('click', async () =
                     await updateDoc(doc(db, "systemControl", querySnapshot.docs[0].id), { status: 'sent' });
                 }
                 const emailTarget = "fatma.hanim@example.com"; 
-                const subject = encodeURIComponent("Kampanya talebi hk.");
+                // 📌 Konu kısmı tamamen küçük harfle "Kampanya talebi hk." olarak güncellendi
+                const subject = encodeURIComponent("kampanya talebi hk.");
                 const body = encodeURIComponent("Fatma Hanım kolay gelsin,\n\nKampanya talebimiz vardır. İlgilenirseniz seviniriz.\n\nİyi çalışmalar.");
                 window.location.href = `mailto:${emailTarget}?subject=${subject}&body=${body}`;
             }
@@ -767,7 +636,9 @@ document.getElementById('btnExcelDownload').addEventListener('click', async () =
                     btnSubmitForm.textContent = "Listeye Ekle / Güncelle";
                     btnSubmitForm.className = "w-full mt-2 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm cursor-pointer";
                     alert('Sistem yeni kampanya dönemine açıldı, veriler sıfırlandı!');
-                } catch (err) { alert("Hata oluştu!"); }
+                } catch (err) {
+                    alert("Hata oluştu!");
+                }
             }
         });
     </script>
