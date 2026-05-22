@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kampanya Talep</title>
-    
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link rel="icon" href="favicon.jpeg" type="image/jpeg">
     <link rel="shortcut icon" href="favicon.jpeg" type="image/jpeg">
 
@@ -576,7 +576,56 @@
 
         // 📊 GÖRSELDEKİ STİLE BİREBİR UYGUN RENKLİ EXCEL DOWNLOAD SİSTEMİ
         document.getElementById('btnExcelDownload').addEventListener('click', async () => {
-            const querySnapshot = await getDocs(campaignCollection);
+        document.getElementById('btnExcelDownload').addEventListener('click', async () => {
+    const querySnapshot = await getDocs(campaignCollection);
+    let rawData = [];
+    querySnapshot.forEach(doc => rawData.push(doc.data()));
+    rawData.sort((a,b) => a.storeName.localeCompare(b.storeName));
+
+    // Excel verisini hazırlama
+    let data = [["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"]];
+    let lastStore = "";
+    
+    rawData.forEach(d => {
+        if (lastStore !== "" && lastStore !== d.storeName) {
+            data.push(["", "", "", "", "", "", ""]); // 1. Boş satır
+            data.push(["", "", "", "", "", "", ""]); // 2. Boş satır
+        }
+        data.push([d.storeName, d.code, d.name, d.quantity, d.normalPrice, d.discountPrice, d.ratio]);
+        lastStore = d.storeName;
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Görseldeki stil kurallarını uygulama
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            let cell = ws[XLSX.utils.encode_cell({r: R, c: C})];
+            if (!cell) continue;
+
+            // Başlık Stili
+            if (R === 0) {
+                cell.s = { 
+                    fill: { fgColor: { rgb: "203764" } }, 
+                    font: { bold: true, color: { rgb: "FFFFFF" } },
+                    alignment: { horizontal: "center" }
+                };
+            } 
+            // Oran Sütunu (Sarı)
+            else if (C === 6) {
+                cell.s = { 
+                    fill: { fgColor: { rgb: "FFE599" } },
+                    font: { bold: true }
+                };
+            }
+        }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Talepler");
+    XLSX.writeFile(wb, "Kampanya_Talepleri.xlsx");
+});    const querySnapshot = await getDocs(campaignCollection);
             let documents = [];
             querySnapshot.forEach(doc => documents.push(doc.data()));
             documents.sort((a,b) => a.storeName.localeCompare(b.storeName));
