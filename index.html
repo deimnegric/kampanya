@@ -5,8 +5,8 @@
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Campanya">
-<link class="apple-touch-icon" href="favicon.jpg">
+<meta name="apple-mobile-web-app-title" content="Kampanya">
+<link rel="apple-touch-icon" href="favicon.jpg">
     <link rel="shortcut icon" href="favicon.jpg" type="image/jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -579,52 +579,55 @@
             btnCancelEdit.classList.add('hidden');
         });
 
-        // 🟢 NİZAMÎ VE TAM HİZALI GERÇEK XLSX İNDİRME YAPISI
+        // 🟢 NİZAMÎ SOLA/SAĞA YASLI VE KÜSURAT KONTROLLÜ EXCEL İNDİRME YAPISI
         document.getElementById('btnExcelDownload').addEventListener('click', async () => {
             const querySnapshot = await getDocs(campaignCollection);
             let docs = [];
             querySnapshot.forEach(d => docs.push(d.data()));
             
-            // Mağaza adına göre nizamî sıralama
             docs.sort((a, b) => a.storeName.localeCompare(b.storeName));
 
             const worksheet = {};
             
-            // Başlık Satırları Tanımlaması
             const headers = ["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"];
             headers.forEach((h, colIndex) => {
                 const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIndex });
-                worksheet[cellRef] = { v: h, t: 's' }; 
+                worksheet[cellRef] = { 
+                    v: h, 
+                    t: 's',
+                    s: { alignment: { horizontal: colIndex === 6 ? "right" : "left" } } // Header hizalaması
+                }; 
             });
 
             let rowIndex = 1;
             let lastStore = "";
 
             docs.forEach(d => {
-                // Mağaza geçişlerinde 2 satır boşluk bırakma kuralı
                 if (lastStore !== "" && lastStore !== d.storeName) {
                     rowIndex += 2; 
                 }
 
                 let isFirst = (lastStore !== d.storeName);
                 
-                // Sütun 0: Mağaza Adı
+                // Sütun 0: Mağaza Adı (Sola yaslı string)
                 worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 0 })] = { v: isFirst ? d.storeName : "", t: 's' };
-                // Sütun 1: Ürün Kodu
+                
+                // Sütun 1: Ürün Kodu (Sola yaslı string)
                 worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 1 })] = { v: d.code, t: 's' };
-                // Sütun 2: Ürün Adı
+                
+                // Sütun 2: Ürün Adı (Sola yaslı string)
                 worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 2 })] = { v: d.name, t: 's' };
                 
-                // Sütun 3: Adet (Sayı biçimi olarak basıp sağa yaslatıyoruz)
-                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 3 })] = { v: Number(d.quantity), t: 'n', z: '#,##0' };
+                // Sütun 3: Adet (Sola yaslı görünmesi için string t: 's' tipinde basıyoruz kanki)
+                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 3 })] = { v: String(d.quantity), t: 's' };
                 
-                // Sütun 4: Normal Fiyat (Sayı biçimi + Excel Özel TL Maskesi)
-                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 4 })] = { v: Number(d.normalPrice), t: 'n', z: '#,##0.0" TL"' };
+                // Sütun 4: Normal Fiyat (Sayısal t: 'n' ama maskesi akıllı: .0 ise göstermez, .50 ise gösterir)
+                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 4 })] = { v: Number(d.normalPrice), t: 'n', z: 'General" TL"' };
                 
-                // Sütun 5: Kampanya Fiyatı (Sayı biçimi + Excel Özel TL Maskesi)
-                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 5 })] = { v: Number(d.discountPrice), t: 'n', z: '#,##0.0" TL"' };
+                // Sütun 5: Kampanya Fiyatı (Sayısal t: 'n' ama maskesi akıllı: .0 ise göstermez, .50 ise gösterir)
+                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 5 })] = { v: Number(d.discountPrice), t: 'n', z: 'General" TL"' };
                 
-                // Sütun 6: Oran (Görseldeki gibi nizamî durması için string temizliği)
+                // Sütun 6: Oran (İstediğin gibi sağa yaslanması için temiz format)
                 let cleanRatio = d.ratio ? d.ratio.replace('%', '') + '%' : '';
                 worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 6 })] = { v: cleanRatio, t: 's' };
                 
@@ -632,27 +635,27 @@
                 rowIndex++;
             });
 
-            // Sayfa Sınırlarını Belirleme
+            // Sayfa Sınırları
             worksheet['!ref'] = XLSX.utils.encode_range({
                 s: { r: 0, c: 0 },
                 e: { r: rowIndex - 1, c: 6 }
             });
 
-            // Sütun genişliklerini tam sığacak şekilde ayarlama
+            // Sütun Genişlikleri
             worksheet['!cols'] = [
                 { wch: 18 }, // Mağaza Adı
                 { wch: 15 }, // Ürün Kodu
                 { wch: 22 }, // Ürün Adı
                 { wch: 10 }, // Adet
-                { wch: 12 }, // Fiyat
-                { wch: 12 }, // Kamp. Fiyat
+                { wch: 14 }, // Fiyat
+                { wch: 14 }, // Kamp. Fiyat
                 { wch: 10 }  // Oran
             ];
 
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Talepler");
 
-            // Doğrudan gerçek .xlsx formatında indirmeyi tetikliyoruz kanki
+            // Dosyayı indir
             XLSX.writeFile(workbook, "Kampanya_Talepleri.xlsx");
         });
 
