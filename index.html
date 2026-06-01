@@ -5,16 +5,17 @@
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Kampanya">
+<meta name="apple-mobile-web-app-title" content="Campanya">
 <link rel="apple-touch-icon" href="favicon.jpg">
     <link rel="shortcut icon" href="favicon.jpg" type="image/jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kampanya Talep </title>
-    <!-- Google Fonts & Tailwind CSS CDN -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Excel indirmek için SheetJS -->
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <style>
         body { font-family: 'Inter', sans-serif; }
         .blur-bg { backdrop-filter: blur(8px); }
@@ -28,11 +29,9 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen antialiased">
 
-    <!-- 🔑 GİRİŞ MODAL EKRANI -->
     <div id="loginModal" class="fixed inset-0 bg-slate-900/60 blur-bg z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-100">
             <div class="text-center mb-6">
-                <!-- 📌 Başlık Kampanya Talep Olarak Güncellendi -->
                 <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Kampanya Talep</h2>
                 <p class="text-sm text-slate-500 mt-1">Devam etmek için lütfen giriş yapın</p>
             </div>
@@ -61,16 +60,13 @@
         </div>
     </div>
 
-    <!-- 📱 ANA PANEL -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        <!-- ÜST BAR -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-6 gap-4">
             <div class="flex items-center gap-3 justify-between w-full sm:w-auto">
                 <div class="flex items-center gap-3">
                     <div class="p-2.5 bg-blue-50 rounded-xl text-blue-600 font-bold text-lg">KT</div>
                     <div>
-                        <!-- 📌 Üst Logo Alanı Başlığı Kampanya Talep Olarak Güncellendi -->
                         <h1 class="font-bold text-lg text-slate-900 tracking-tight">Kampanya Talep</h1>
                         <p class="text-xs text-slate-500 flex items-center gap-1.5 flex-wrap">
                             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -78,13 +74,11 @@
                         </p>
                     </div>
                 </div>
-                <!-- 🚪 Çıkış Butonu -->
                 <button id="btnLogout" class="sm:ml-4 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl transition-colors border border-rose-200 flex items-center gap-1 cursor-pointer">
                     Çıkış Yap
                 </button>
             </div>
             
-            <!-- Yönetici Kontrolleri -->
             <div id="adminControls" class="hidden flex flex-wrap items-center gap-2">
                 <button id="btnExcelDownload" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
                     Excel Dosyası İndir
@@ -100,7 +94,6 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- VERİ GİRİŞ FORMU -->
             <div class="lg:col-span-1 bg-white rounded-2xl p-5 shadow-sm border border-slate-100 h-fit">
                 <div class="mb-4">
                     <h2 class="font-bold text-slate-900">Ürün Giriş Formu</h2>
@@ -110,17 +103,14 @@
                 <form id="campaignForm" class="space-y-3.5">
                     <input type="hidden" id="docId">
                     
-                    <!-- 👑 Bölge Sorumlusu Çoklu Mağaza Seçim Alanı -->
                     <div id="adminStoreSelectArea" class="hidden p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100 space-y-2">
                         <div class="flex items-center justify-between border-b border-blue-100/70 pb-1.5">
                             <label class="block text-xs font-bold text-blue-800 uppercase tracking-wider">Kampanya Yapılacak Mağazalar</label>
                             <button type="button" id="btnSelectAllStores" class="text-[11px] bg-blue-600 text-white px-2 py-0.5 rounded-lg hover:bg-blue-700 font-medium transition-colors cursor-pointer">Tümünü Seç</button>
                         </div>
                         
-                        <!-- Dinamik İşaretleme Kutuları Grubu -->
                         <div id="adminStoreCheckboxGroup" class="max-h-44 overflow-y-auto space-y-1.5 pr-1 text-xs text-slate-700 font-medium">
-                            <!-- Mağazalar dinamik ve sabit liste olarak buraya gelecek -->
-                        </div>
+                            </div>
                         
                         <div class="pt-1.5 border-t border-blue-100/70">
                             <input type="text" id="adminManualStoreName" placeholder="Yeni Mağaza Ekle (Listede Yoksa)" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs">
@@ -161,7 +151,6 @@
                 </form>
             </div>
 
-            <!-- CANLI TABLO -->
             <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
                 <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
@@ -198,7 +187,6 @@
         </div>
     </div>
 
-    <!-- FIREBASE & INTERACTION SCRIPT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { 
@@ -270,7 +258,6 @@
             }
         });
 
-        // Bölge Sorumlusu Giriş Şifresi Otomatik Tetikleyici
         loginAdminKey.addEventListener('input', (e) => {
             const currentPass = e.target.value.trim();
             if (currentPass.length === 6) {
@@ -592,77 +579,64 @@
             btnCancelEdit.classList.add('hidden');
         });
 
+        // 🟢 YENİ VE GÜVENLİ EXCEL İNDİRME FONKSİYONU (SHEETJS ENTEGRELİ)
         document.getElementById('btnExcelDownload').addEventListener('click', async () => {
-    const querySnapshot = await getDocs(campaignCollection);
-    let docs = [];
-    querySnapshot.forEach(d => docs.push(d.data()));
-    docs.sort((a,b) => a.storeName.localeCompare(b.storeName));
+            const querySnapshot = await getDocs(campaignCollection);
+            let docs = [];
+            querySnapshot.forEach(d => docs.push(d.data()));
+            
+            // Mağaza adına göre alfabetik sıralama
+            docs.sort((a, b) => a.storeName.localeCompare(b.storeName));
 
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>
-    <?mso-application progid="Excel.Sheet"?>
-    <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-    <Styles>
-        <Style ss:ID="Default" ss:Name="Normal"><Font ss:FontName="Arial" ss:Size="11"/></Style>
-        <Style ss:ID="Header">
-            <Font ss:FontName="Arial" ss:Bold="1" ss:Color="#FFFFFF"/>
-            <Interior ss:Color="#203764" ss:Pattern="Solid"/>
-            <Alignment ss:Horizontal="Center"/>
-        </Style>
-        <Style ss:ID="Store">
-            <Font ss:FontName="Arial" ss:Bold="1"/>
-            <Alignment ss:Vertical="Center"/>
-        </Style>
-        <Style ss:ID="PriceGray">
-            <Font ss:FontName="Arial" ss:Bold="1"/>
-            <Interior ss:Color="#EAEAEA" ss:Pattern="Solid"/>
-            <Alignment ss:Horizontal="Right"/>
-        </Style>
-        <Style ss:ID="PriceNormal"><Font ss:FontName="Arial"/><Alignment ss:Horizontal="Right"/></Style>
-        <Style ss:ID="Ratio">
-            <Font ss:FontName="Arial" ss:Bold="1"/>
-            <Interior ss:Color="#FFE599" ss:Pattern="Solid"/>
-            <Alignment ss:Horizontal="Center"/>
-        </Style>
-    </Styles>
-    <Worksheet ss:Name="Talepler">
-    <Table>
-        <Column ss:Width="138.75"/> <Column ss:Width="114.0"/>  <Column ss:Width="97.5"/>   <Column ss:Width="50.0"/>   <Column ss:Width="91.0"/>   <Column ss:Width="96.0"/>   <Column ss:Width="60.0"/>   <Row>
-            <Cell ss:StyleID="Header"><Data ss:Type="String">Mağaza Adı</Data></Cell>
-            <Cell ss:StyleID="Header"><Data ss:Type="String">Ürün Kodu</Data></Cell>
-            <Cell ss:StyleID="Header"><Data ss:Type="String">Ürün Adı</Data></Cell>
-            <Cell ss:StyleID="Header"><Data ss:Type="String">Adet</Data></Cell>
-            <Cell ss:StyleID="Header"><Data ss:Type="String">Fiyat</Data></Cell>
-            <Cell ss:StyleID="Header"><Data ss:Type="String">Kamp. Fiyat</Data></Cell>
-            <Cell ss:StyleID="Header"><Data ss:Type="String">Oran</Data></Cell>
-        </Row>`;
+            // Excel için başlık satırı
+            const excelRows = [
+                ["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"]
+            ];
 
-    let lastStore = "";
-    docs.forEach(d => {
-        if (lastStore !== "" && lastStore !== d.storeName) {
-            xml += `<Row><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/></Row><Row><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/><Cell/></Row>`;
-        }
-        let isFirst = (lastStore !== d.storeName);
-        let priceStyle = isFirst ? ' ss:StyleID="PriceGray"' : ' ss:StyleID="PriceNormal"';
-        xml += `<Row>
-            <Cell ss:StyleID="Store"><Data ss:Type="String">${isFirst ? d.storeName : ""}</Data></Cell>
-            <Cell><Data ss:Type="String">${d.code}</Data></Cell>
-            <Cell><Data ss:Type="String">${d.name}</Data></Cell>
-            <Cell><Data ss:Type="Number">${d.quantity}</Data></Cell>
-            <Cell${priceStyle}><Data ss:Type="Number">${d.normalPrice}</Data></Cell>
-            <Cell${priceStyle}><Data ss:Type="Number">${d.discountPrice}</Data></Cell>
-            <Cell ss:StyleID="Ratio"><Data ss:Type="String">${d.ratio}</Data></Cell>
-        </Row>`;
-        lastStore = d.storeName;
-    });
+            let lastStore = "";
+            docs.forEach(d => {
+                // Farklı mağaza blokları arasında 2 satırlık boşluk bırakma
+                if (lastStore !== "" && lastStore !== d.storeName) {
+                    excelRows.push([]); 
+                    excelRows.push([]); 
+                }
 
-    xml += `</Table></Worksheet></Workbook>`;
-    const blob = new Blob([xml], { type: "application/vnd.ms-excel" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "Kampanya_Talepleri.xls";
-    a.click();
-});
+                // İlk satırda Mağaza adı yazsın, alt satırlarda tekrarlamasın
+                let isFirst = (lastStore !== d.storeName);
+                
+                excelRows.push([
+                    isFirst ? d.storeName : "",
+                    d.code,
+                    d.name,
+                    Number(d.quantity),
+                    Number(d.normalPrice),
+                    Number(d.discountPrice),
+                    d.ratio
+                ]);
+                
+                lastStore = d.storeName;
+            });
+
+            // SheetJS ile gerçek Excel dosyasını yapılandırıyoruz
+            const worksheet = XLSX.utils.aoa_to_sheet(excelRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Talepler");
+
+            // Şık bir görünüm için sütun genişlikleri
+            worksheet['!cols'] = [
+                { wch: 20 }, // Mağaza Adı
+                { wch: 15 }, // Ürün Kodu
+                { wch: 25 }, // Ürün Adı
+                { wch: 8 },  // Adet
+                { wch: 12 }, // Fiyat
+                { wch: 12 }, // Kamp. Fiyat
+                { wch: 10 }  // Oran
+            ];
+
+            // Doğrudan .xlsx olarak kaydet ve indir
+            XLSX.writeFile(workbook, "Kampanya_Talepleri.xlsx");
+        });
+
         document.getElementById('btnSendMail').addEventListener('click', async () => {
             if (confirm('Kampanyayı kilitleyip Mail şablonunu açmak istiyor musunuz?')) {
                 const querySnapshot = await getDocs(systemCollection);
@@ -671,8 +645,7 @@
                 } else {
                     await updateDoc(doc(db, "systemControl", querySnapshot.docs[0].id), { status: 'sent' });
                 }
-                const emailTarget = "fatma.torun@bim.com.tr"; 
-                // 📌 Konu kısmı tamamen küçük harfle "Kampanya talebi hk." olarak güncellendi
+                const emailTarget = "fatma.torun@bim.com.tr";
                 const subject = encodeURIComponent("Kampanya Talebi Hk.");
                 const body = encodeURIComponent("Fatma Hanım kolay gelsin,\n\nKampanya talebimiz vardır. İlgilenirseniz seviniriz.\n\nİyi çalışmalar.");
                 window.location.href = `mailto:${emailTarget}?subject=${subject}&body=${body}`;
