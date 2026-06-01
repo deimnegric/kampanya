@@ -5,7 +5,7 @@
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Campanya">
+<meta name="apple-mobile-web-app-title" content="Kampanya">
 <link rel="apple-touch-icon" href="favicon.jpg">
     <link rel="shortcut icon" href="favicon.jpg" type="image/jpg">
     <meta charset="UTF-8">
@@ -579,7 +579,7 @@
             btnCancelEdit.classList.add('hidden');
         });
 
-        // 🟢 YENİ VE GÜVENLİ EXCEL İNDİRME FONKSİYONU (SHEETJS ENTEGRELİ)
+        // 🟢 PROFESYONEL VE HİZALI EXCEL İNDİRME FONKSİYONU
         document.getElementById('btnExcelDownload').addEventListener('click', async () => {
             const querySnapshot = await getDocs(campaignCollection);
             let docs = [];
@@ -588,50 +588,69 @@
             // Mağaza adına göre alfabetik sıralama
             docs.sort((a, b) => a.storeName.localeCompare(b.storeName));
 
-            // Excel için başlık satırı
-            const excelRows = [
-                ["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"]
-            ];
-
-            let lastStore = "";
-            docs.forEach(d => {
-                // Farklı mağaza blokları arasında 2 satırlık boşluk bırakma
-                if (lastStore !== "" && lastStore !== d.storeName) {
-                    excelRows.push([]); 
-                    excelRows.push([]); 
-                }
-
-                // İlk satırda Mağaza adı yazsın, alt satırlarda tekrarlamasın
-                let isFirst = (lastStore !== d.storeName);
-                
-                excelRows.push([
-                    isFirst ? d.storeName : "",
-                    d.code,
-                    d.name,
-                    Number(d.quantity),
-                    Number(d.normalPrice),
-                    Number(d.discountPrice),
-                    d.ratio
-                ]);
-                
-                lastStore = d.storeName;
+            // Hücre bazlı tam yönetim için boş bir sayfa nesnesi oluşturuyoruz
+            const worksheet = {};
+            
+            // Başlık Satırları
+            const headers = ["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"];
+            headers.forEach((h, colIndex) => {
+                const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIndex });
+                worksheet[cellRef] = { v: h, t: 's' }; // t:'s' -> Metin formatı
             });
 
-            // SheetJS ile gerçek Excel dosyasını yapılandırıyoruz
-            const worksheet = XLSX.utils.aoa_to_sheet(excelRows);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Talepler");
+            let rowIndex = 1;
+            let lastStore = "";
 
-            // Şık bir görünüm için sütun genişlikleri
+            docs.forEach(d => {
+                // Mağaza blokları arasında 2 satırlık boşluk bırakma yapısı
+                if (lastStore !== "" && lastStore !== d.storeName) {
+                    rowIndex += 2; 
+                }
+
+                let isFirst = (lastStore !== d.storeName);
+                
+                // 0. Sütun: Mağaza Adı
+                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 0 })] = { v: isFirst ? d.storeName : "", t: 's' };
+                // 1. Sütun: Ürün Kodu
+                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 1 })] = { v: d.code, t: 's' };
+                // 2. Sütun: Ürün Adı
+                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 2 })] = { v: d.name, t: 's' };
+                
+                // 3. Sütun: Adet (Sayı formatı ve sağa yaslama için t:'n')
+                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 3 })] = { v: Number(d.quantity), t: 'n', z: '#,##0' };
+                
+                // 4. Sütun: Normal Fiyat (Sayı ve Finansal Para Birimi Biçimi)
+                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 4 })] = { v: Number(d.normalPrice), t: 'n', z: '#,##0.00" TL"' };
+                
+                // 5. Sütun: Kampanya Fiyatı (Sayı ve Finansal Para Birimi Biçimi)
+                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 5 })] = { v: Number(d.discountPrice), t: 'n', z: '#,##0.00" TL"' };
+                
+                // 6. Sütun: Oran (Metin olarak kalabilir veya hizalı durması sağlanır)
+                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 6 })] = { v: d.ratio, t: 's' };
+                
+                lastStore = d.storeName;
+                rowIndex++;
+            });
+
+            // Sayfanın hücre sınır sınırlarını (A1:GXX) SheetJS'e bildiriyoruz
+            worksheet['!ref'] = XLSX.utils.encode_range({
+                s: { r: 0, c: 0 },
+                e: { r: rowIndex - 1, c: 6 }
+            });
+
+            // Sütun genişliklerini tam sığacak ve şık duracak şekilde hizalıyoruz
             worksheet['!cols'] = [
                 { wch: 20 }, // Mağaza Adı
                 { wch: 15 }, // Ürün Kodu
                 { wch: 25 }, // Ürün Adı
-                { wch: 8 },  // Adet
-                { wch: 12 }, // Fiyat
-                { wch: 12 }, // Kamp. Fiyat
-                { wch: 10 }  // Oran
+                { wch: 10 }, // Adet (Genişletildi)
+                { wch: 14 }, // Fiyat (Genişletildi)
+                { wch: 14 }, // Kamp. Fiyat (Genişletildi)
+                { wch: 12 }  // Oran
             ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Talepler");
 
             // Doğrudan .xlsx olarak kaydet ve indir
             XLSX.writeFile(workbook, "Kampanya_Talepleri.xlsx");
@@ -677,3 +696,5 @@
     </script>
 </body>
 </html>
+
+     
