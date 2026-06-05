@@ -666,55 +666,62 @@
                 const storeCompare = a.sortName.localeCompare(b.sortName);
                 if (storeCompare !== 0) return storeCompare;
                 
-                // Ürün kodlarını stringe çevirip büyükten küçüğe sıralıyoruz (701..., 301... şeklinde)
                 const codeA = String(a.code || "");
                 const codeB = String(b.code || "");
                 return codeB.localeCompare(codeA, undefined, { numeric: true, sensitivity: 'base' });
             });
 
-            const worksheet = {};
-            const headers = ["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Camp. Fiyat", "Oran"];
-            headers.forEach((h, colIndex) => {
-                const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIndex });
-                worksheet[cellRef] = { v: h, t: 's' }; 
-            });
+            const workbook = XLSX.utils.book_new();
+            const worksheetData = [];
+            
+            // Başlık satırı
+            worksheetData.push(["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"]);
 
-            let rowIndex = 1;
             let lastStore = "";
 
             docs.forEach(d => {
+                // Mağaza değiştiğinde araya 2 boş satır atıyoruz
                 if (lastStore !== "" && lastStore !== d.sortName) {
-                    rowIndex += 2; 
+                    worksheetData.push([]);
+                    worksheetData.push([]);
                 }
 
                 let isFirst = (lastStore !== d.sortName);
-                
-                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 0 })] = { v: isFirst ? d.sortName : "", t: 's' };
-                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 1 })] = { v: d.code, t: 's' };
-                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 2 })] = { v: d.name, t: 's' };
-                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 3 })] = { v: String(d.quantity), t: 's' };
-                
-                // TL ibaresi tamamen kaldırıldı, sadece saf sayı olarak basılıyor
-                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 4 })] = { v: Number(d.normalPrice), t: 'n', z: 'General' };
-                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 5 })] = { v: Number(d.discountPrice), t: 'n', z: 'General' };
-                
                 let cleanRatio = d.ratio ? d.ratio.replace('%', '') + '%' : '';
-                worksheet[XLSX.utils.encode_cell({ r: rowIndex, c: 6 })] = { v: cleanRatio, t: 's' };
+                
+                worksheetData.push([
+                    isFirst ? d.sortName : "",
+                    d.code,
+                    d.name,
+                    Number(d.quantity),
+                    Number(d.normalPrice),
+                    Number(d.discountPrice),
+                    cleanRatio
+                ]);
                 
                 lastStore = d.sortName;
-                rowIndex++;
             });
 
-            worksheet['!ref'] = XLSX.utils.encode_range({
-                s: { r: 0, c: 0 },
-                e: { r: rowIndex - 1, c: 6 }
-            });
+            // aoa_to_sheet kullanarak hem veriyi basıyoruz hem de sütun bazlı hizalamaları ayarlayacağız
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+            // Oran sütununu (6. indeks yani G sütunu) sağa hizalamak için hücre stillerini kontrol ediyoruz
+            // XLSX aoa_to_sheet varsayılan olarak s (style) nesnesi eklemez, ancak yapıya uygun hücre bazlı s ataması yapabiliriz
+            // Sayfa sınırları içindeki tüm G (Oran) hücrelerine sağa hizalama formatı ekleyelim:
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+            for (let r = range.s.r; r <= range.e.r; r++) {
+                const cellRef = XLSX.utils.encode_cell({ r: r, c: 6 }); // 6 = G Sütunu (Oran)
+                if (worksheet[cellRef]) {
+                    // Eğer stil objesi yoksa oluşturup hizalamayı sağa çekiyoruz
+                    if (!worksheet[cellRef].s) worksheet[cellRef].s = {};
+                    worksheet[cellRef].s.alignment = { horizontal: "right" };
+                }
+            }
 
             worksheet['!cols'] = [
                 { wch: 22 }, { wch: 15 }, { wch: 22 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 10 }
             ];
 
-            const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Talepler");
             XLSX.writeFile(workbook, "Kampanya_Talepleri.xlsx");
         });
@@ -729,7 +736,7 @@
                 }
                 const emailTarget = "fatma.torun@bim.com.tr"; 
                 const subject = encodeURIComponent("Kampanya Talebi Hk.");
-                const body = encodeURIComponent("Fatma Hanım kolay gelsin,\\n\\nKampanya talebimiz vardır. İlgilenirseniz seviniriz.\\n\\nİyi çalışmalar.");
+                const body = encodeURIComponent("Fatma Hanım kolay gelsin,\n\nKampanya talebimiz vardır. İlgilenirseniz seviniriz.\n\nİyi çalışmalar.");
                 window.location.href = `mailto:${emailTarget}?subject=${subject}&body=${body}`;
             }
         });
