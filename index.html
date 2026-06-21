@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Campanya">
-<link rel="apple-touch-icon" href="favicon.jpg">
+<link class="apple-touch-icon" href="favicon.jpg">
     <link rel="shortcut icon" href="favicon.jpg" type="image/jpg">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -190,12 +190,13 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { 
-            getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc, getDocs 
-        } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+            getDatabase, ref, set, push, onValue, remove, update, get 
+        } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCbx9rpPH3IGpdfgn-79GLL7o0Aa2ovAzw",
             authDomain: "kampanya-80c2a.firebaseapp.com",
+            databaseURL: "https://kampanya-80c2a-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "kampanya-80c2a",
             storageBucket: "kampanya-80c2a.firebasestorage.app",
             messagingSenderId: "665592400645",
@@ -204,9 +205,10 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const campaignCollection = collection(db, "campaigns");
-        const systemCollection = collection(db, "systemControl");
+        const db = getDatabase(app);
+        
+        const campaignRef = ref(db, "campaigns");
+        const systemRef = ref(db, "systemControl");
 
         let currentUser = { type: 'MS', name: '' };
         let liveStoresList = []; 
@@ -338,11 +340,14 @@
         }
 
         function initLiveSync() {
-            onSnapshot(query(systemCollection), (snapshot) => {
+            onValue(systemRef, (snapshot) => {
                 isSystemLocked = false;
-                snapshot.forEach(doc => {
-                    if (doc.data().status === 'sent') isSystemLocked = true;
-                });
+                const data = snapshot.val();
+                if (data) {
+                    Object.values(data).forEach(item => {
+                        if (item.status === 'sent') isSystemLocked = true;
+                    });
+                }
                 if (isSystemLocked) {
                     lockStatusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Rapor Gönderildi (Kilitli)`;
                     lockStatusBadge.className = "px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-[11px] font-medium flex items-center gap-1";
@@ -357,12 +362,13 @@
                 }
             });
 
-            onSnapshot(campaignCollection, (snapshot) => {
+            onValue(campaignRef, (snapshot) => {
                 tableBody.innerHTML = "";
                 localCampaignsCache = []; 
+                const rawData = snapshot.val();
                 
-                if (snapshot.empty) {
-                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs">Henüz hiç veri girildi. İlk veriyi siz girin!</td></tr>`;
+                if (!rawData) {
+                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs">Henüz hiç veri girilmedi. İlk veriyi siz girin!</td></tr>`;
                     liveStoresList = [];
                     updateAdminCheckboxes();
                     return;
@@ -371,8 +377,8 @@
                 let singleStoreDocs = [];
                 let multiStoreDocs = [];
 
-                snapshot.forEach(doc => {
-                    const docData = { id: doc.id, ...doc.data() };
+                Object.keys(rawData).forEach(key => {
+                    const docData = { id: key, ...rawData[key] };
                     localCampaignsCache.push(docData); 
 
                     if (Array.isArray(docData.storeName) && docData.storeName.length > 1) {
@@ -396,7 +402,7 @@
                 });
                 updateAdminCheckboxes();
 
-                // 1. ETAP: ADMİNİN ÇOKLU SEÇEREK GİRDİĞİ ORTAK KAMPANYALARI TEK SATIRDA EN ÜSTE BASIYORUZ
+                // 1. ETAP: ORTAK KAMPANYALARI BASTIRMA
                 if (multiStoreDocs.length > 0) {
                     multiStoreDocs.forEach(data => {
                         const id = data.id;
@@ -440,7 +446,7 @@
                     tableBody.appendChild(middleSeparator);
                 }
 
-                // 2. ETAP: HARİCİ MAĞAZA BAZLI GİRİŞLERİ GRUPLAYIP MAĞAZA ADINI TEK SEFER YAZDIRIYORUZ
+                // 2. ETAP: HARİCİ GRUPLARI BASTIRMA
                 const groupedCampaigns = {};
                 singleStoreDocs.forEach(docData => {
                     if (!groupedCampaigns[docData.storeName]) groupedCampaigns[docData.storeName] = [];
@@ -550,16 +556,17 @@
                             });
                             if (isDuplicate) return alert(`Bu ortak mağaza grubu için "${inputProductCode}" ürünü zaten eklenmiş!`);
                             
-                            // 🟢 ÇOKLU MAĞAZA SEÇİLDİYSE ARRAY OLARAK TEK DÖKÜMANDA KAYDEDİYORUZ!
-                            await addDoc(campaignCollection, { ...baseCampaignData, storeName: selectedStores });
+                            const newRecordRef = push(campaignRef);
+                            await set(newRecordRef, { ...baseCampaignData, storeName: selectedStores });
                         } else {
                             const singleStore = selectedStores[0];
                             const isDuplicate = localCampaignsCache.some(item => !Array.isArray(item.storeName) && item.storeName === singleStore && item.code === inputProductCode);
                             if (isDuplicate) return alert(`"${singleStore}" mağazası için bu ürün zaten mevcut!`);
                             
-                            await addDoc(campaignCollection, { ...baseCampaignData, storeName: singleStore });
+                            const newRecordRef = push(campaignRef);
+                            await set(newRecordRef, { ...baseCampaignData, storeName: singleStore });
                         }
-                    } catch(err) { alert("Hata oluştu!"); return; }
+                    } catch(err) { alert("Hata detayı: " + err.message); return; }
 
                 } else {
                     const isDuplicate = localCampaignsCache.some(item => !Array.isArray(item.storeName) && item.storeName === currentUser.name && item.code === inputProductCode);
@@ -568,8 +575,9 @@
                     }
 
                     try {
-                        await addDoc(campaignCollection, { ...baseCampaignData, storeName: currentUser.name });
-                    } catch(err) { alert("Hata oluştu!"); return; }
+                        const newRecordRef = push(campaignRef);
+                        await set(newRecordRef, { ...baseCampaignData, storeName: currentUser.name });
+                    } catch(err) { alert("Hata detayı: " + err.message); return; }
                 }
             } else {
                 try {
@@ -583,8 +591,9 @@
                             updatedStoreName = selectedStores.length > 1 ? selectedStores : (selectedStores[0] || targetStoresBaseList[0]);
                         }
                     }
-                    await updateDoc(doc(db, "campaigns", docId), { ...baseCampaignData, storeName: updatedStoreName });
-                } catch(err) { alert("Hata oluştu!"); return; }
+                    const singleDocRef = ref(db, `campaigns/${docId}`);
+                    await update(singleDocRef, { ...baseCampaignData, storeName: updatedStoreName });
+                } catch(err) { alert("Hata detayı: " + err.message); return; }
             }
 
             campaignForm.reset();
@@ -631,7 +640,8 @@
         async function handleDelete(e) {
             if (confirm('Silmek istediğinize emin misiniz?')) {
                 const id = e.target.getAttribute('data-id');
-                await deleteDoc(doc(db, "campaigns", id));
+                const singleDocRef = ref(db, `campaigns/${id}`);
+                await remove(singleDocRef);
             }
         }
 
@@ -649,19 +659,22 @@
         });
 
         document.getElementById('btnExcelDownload').addEventListener('click', async () => {
-            const querySnapshot = await getDocs(campaignCollection);
+            const snapshot = await get(campaignRef);
+            const rawData = snapshot.val();
             let docs = [];
-            querySnapshot.forEach(d => {
-                const data = d.data();
-                if(Array.isArray(data.storeName)) {
-                    data.sortName = data.storeName.length >= targetStoresBaseList.length ? "Tüm Mağazalar" : `${data.storeName.length} Mağaza (Ortak)`;
-                } else {
-                    data.sortName = data.storeName;
-                }
-                docs.push(data);
-            });
             
-            // Sıralama Mantığı: Önce Mağaza Adına göre, sonra Ürün Koduna göre Büyükten Küçüğe
+            if (rawData) {
+                Object.keys(rawData).forEach(key => {
+                    const data = rawData[key];
+                    if(Array.isArray(data.storeName)) {
+                        data.sortName = data.storeName.length >= targetStoresBaseList.length ? "Tüm Mağazalar" : `${data.storeName.length} Mağaza (Ortak)`;
+                    } else {
+                        data.sortName = data.storeName;
+                    }
+                    docs.push(data);
+                });
+            }
+            
             docs.sort((a, b) => {
                 const storeCompare = a.sortName.localeCompare(b.sortName);
                 if (storeCompare !== 0) return storeCompare;
@@ -674,13 +687,11 @@
             const workbook = XLSX.utils.book_new();
             const worksheetData = [];
             
-            // Başlık satırı
             worksheetData.push(["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"]);
 
             let lastStore = "";
 
             docs.forEach(d => {
-                // Mağaza değiştiğinde araya 2 boş satır atıyoruz
                 if (lastStore !== "" && lastStore !== d.sortName) {
                     worksheetData.push([]);
                     worksheetData.push([]);
@@ -702,17 +713,12 @@
                 lastStore = d.sortName;
             });
 
-            // aoa_to_sheet kullanarak hem veriyi basıyoruz hem de sütun bazlı hizalamaları ayarlayacağız
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
-            // Oran sütununu (6. indeks yani G sütunu) sağa hizalamak için hücre stillerini kontrol ediyoruz
-            // XLSX aoa_to_sheet varsayılan olarak s (style) nesnesi eklemez, ancak yapıya uygun hücre bazlı s ataması yapabiliriz
-            // Sayfa sınırları içindeki tüm G (Oran) hücrelerine sağa hizalama formatı ekleyelim:
             const range = XLSX.utils.decode_range(worksheet['!ref']);
             for (let r = range.s.r; r <= range.e.r; r++) {
-                const cellRef = XLSX.utils.encode_cell({ r: r, c: 6 }); // 6 = G Sütunu (Oran)
+                const cellRef = XLSX.utils.encode_cell({ r: r, c: 6 }); 
                 if (worksheet[cellRef]) {
-                    // Eğer stil objesi yoksa oluşturup hizalamayı sağa çekiyoruz
                     if (!worksheet[cellRef].s) worksheet[cellRef].s = {};
                     worksheet[cellRef].s.alignment = { horizontal: "right" };
                 }
@@ -728,11 +734,15 @@
 
         document.getElementById('btnSendMail').addEventListener('click', async () => {
             if (confirm('Kampanyayı kilitleyip Mail şablonunu açmak istiyor musunuz?')) {
-                const querySnapshot = await getDocs(systemCollection);
-                if (querySnapshot.empty) {
-                    await addDoc(systemCollection, { status: 'sent' });
+                const snapshot = await get(systemRef);
+                const data = snapshot.val();
+                
+                if (!data) {
+                    const newSysRef = push(systemRef);
+                    await set(newSysRef, { status: 'sent' });
                 } else {
-                    await updateDoc(doc(db, "systemControl", querySnapshot.docs[0].id), { status: 'sent' });
+                    const firstKey = Object.keys(data)[0];
+                    await update(ref(db, `systemControl/${firstKey}`), { status: 'sent' });
                 }
                 const emailTarget = "fatma.torun@bim.com.tr"; 
                 const subject = encodeURIComponent("Kampanya Talebi Hk.");
@@ -744,16 +754,15 @@
         btnUnlockSystem.addEventListener('click', async () => {
             if (confirm('Sistem sıfırlanacak ve yeni bir kampanya dönemi başlayacaktır. Eski veriler silinecektir. Emin misiniz?')) {
                 try {
-                    const systemSnapshot = await getDocs(systemCollection);
-                    if (!systemSnapshot.empty) {
-                        await updateDoc(doc(db, "systemControl", systemSnapshot.docs[0].id), { status: 'open' });
+                    const systemSnapshot = await get(systemRef);
+                    const systemData = systemSnapshot.val();
+                    if (systemData) {
+                        const firstKey = Object.keys(systemData)[0];
+                        await update(ref(db, `systemControl/${firstKey}`), { status: 'open' });
                     }
-                    const campaignSnapshot = await getDocs(campaignCollection);
-                    const deletePromises = [];
-                    campaignSnapshot.forEach((docSnap) => {
-                        deletePromises.push(deleteDoc(doc(db, "campaigns", docSnap.id)));
-                    });
-                    await Promise.all(deletePromises);
+                    
+                    await remove(campaignRef);
+                    
                     btnSubmitForm.disabled = false;
                     btnSubmitForm.textContent = "Listeye Ekle / Güncelle";
                     btnSubmitForm.className = "w-full mt-2 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm cursor-pointer";
@@ -766,3 +775,4 @@
     </script>
 </body>
 </html>
+
