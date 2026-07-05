@@ -289,6 +289,19 @@
         const btnCancelEdit = document.getElementById('btnCancelEdit');
         const tableBody = document.getElementById('tableBody');
 
+        // Bir mağaza adının hangi bölgenin (BS'nin) listesinde tanımlı olduğunu bulur.
+        // Sadece önceden tanımlı temel mağaza listelerine bakar (sonradan elle eklenen
+        // mağazalar için otomatik kontrol yapılamaz, çünkü giriş öncesi diğer bölgenin
+        // canlı verisi henüz çekilmemiştir).
+        function findRegionKeyForStore(storeName) {
+            const normalized = storeName.trim().toLocaleLowerCase('tr');
+            for (const key of Object.keys(REGIONS)) {
+                const found = REGIONS[key].baseStores.some(s => s.trim().toLocaleLowerCase('tr') === normalized);
+                if (found) return key;
+            }
+            return null;
+        }
+
         function updateRegionUI() {
             regionBadge.textContent = '• ' + REGIONS[currentRegionKey].label;
             if (btnSwitchRegion) {
@@ -345,7 +358,14 @@
                 let storeName = loginStoreName.value.trim();
                 if (!storeName) return alert('Lütfen mağaza adınızı yazın!');
                 if(storeName.toLowerCase().startsWith("atatürk")) storeName = "Atatürk Cd.";
-                currentRegionKey = loginRegion.value;
+
+                const selectedRegion = loginRegion.value;
+                const actualRegion = findRegionKeyForStore(storeName);
+                if (actualRegion && actualRegion !== selectedRegion) {
+                    return alert('Lütfen doğru bölge sorumlusunu seçiniz.');
+                }
+
+                currentRegionKey = selectedRegion;
                 campaignRef = ref(db, REGIONS[currentRegionKey].campaignsPath);
                 systemRef = ref(db, REGIONS[currentRegionKey].systemPath);
                 currentUser = { type: loginType.value, name: storeName };
