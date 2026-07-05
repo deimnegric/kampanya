@@ -23,6 +23,7 @@
         .store-color-2 { background-color: rgba(254, 242, 242, 0.8); } /* Soft Kırmızı */
         .store-color-3 { background-color: rgba(255, 251, 235, 0.8); } /* Soft Sarı */
         .store-color-4 { background-color: rgba(250, 245, 255, 0.8); } /* Soft Mor */
+        .edit-input { width: 100%; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen antialiased">
@@ -41,6 +42,13 @@
                         <option value="MSY">MSY (Mağaza Sorumlu Yardımcısı)</option>
                         <option value="Günlük Temsilci">Günlük Temsilci</option>
                         <option value="admin">Bölge Sorumlusu (Yönetici)</option>
+                    </select>
+                </div>
+                <div id="regionSelectArea">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Bölge</label>
+                    <select id="loginRegion" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        <option value="mevlut">Mevlüt Bilir Bölgesi</option>
+                        <option value="yusuf">Yusuf Yıldız Bölgesi</option>
                     </select>
                 </div>
                 <div id="storeNameArea">
@@ -69,6 +77,7 @@
                         <p class="text-xs text-slate-500 flex items-center gap-1.5 flex-wrap">
                             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             Aktif Kullanıcı Oturumu: <span id="currentSessionBadge" class="font-semibold text-slate-700">Yükleniyor...</span>
+                            <span id="regionBadge" class="font-semibold text-amber-600"></span>
                         </p>
                     </div>
                 </div>
@@ -78,6 +87,9 @@
             </div>
             
             <div id="adminControls" class="hidden flex flex-wrap items-center gap-2">
+                <button id="btnSwitchRegion" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
+                    Yusuf Yıldız Bölgesini Görüntüle
+                </button>
                 <button id="btnExcelDownload" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
                     Excel Dosyası İndir
                 </button>
@@ -95,11 +107,10 @@
             <div class="lg:col-span-1 bg-white rounded-2xl p-5 shadow-sm border border-slate-100 h-fit">
                 <div class="mb-4">
                     <h2 class="font-bold text-slate-900">Ürün Giriş Formu</h2>
-                    <p class="text-xs text-slate-400 mt-0.5">Lütfen kampanya bilgilerini eksiksiz girin.</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Lütfen kampanya bilgilerini eksiksiz girin. Kampanya oranı en fazla %33 olabilir.</p>
                 </div>
                 
                 <form id="campaignForm" class="space-y-3.5">
-                    <input type="hidden" id="docId">
                     
                     <div id="adminStoreSelectArea" class="hidden p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100 space-y-2">
                         <div class="flex items-center justify-between border-b border-blue-100/70 pb-1.5">
@@ -132,6 +143,7 @@
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">İstenen Fiyat (TL)</label>
                             <input type="number" step="0.01" id="discountValue" required placeholder="0.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            <p class="text-[10px] text-amber-600 mt-1">Kampanya oranı %33'ü geçemez.</p>
                         </div>
                     </div>
                     
@@ -141,10 +153,10 @@
                     </div>
 
                     <button type="submit" id="btnSubmitForm" class="w-full mt-2 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm cursor-pointer">
-                        Listeye Ekle / Güncelle
+                        Listeye Ekle
                     </button>
-                    <button type="button" id="btnCancelEdit" class="hidden w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-xs transition-colors cursor-pointer">
-                        Düzenlemeyi İptal Et
+                    <button type="button" id="btnCancelEdit" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-xs transition-colors cursor-pointer">
+                        Formu Temizle
                     </button>
                 </form>
             </div>
@@ -153,7 +165,7 @@
                 <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
                         <h2 class="font-bold text-slate-900 text-sm">Tüm Mağazaların Canlı Listesi</h2>
-                        <p class="text-xs text-slate-400 mt-0.5">Ortak ve harici girişler ayrıştırılarak listelenir.</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Ortak ve harici girişler ayrıştırılarak listelenir. Aynı ürünü isteyen mağazalar birleştirilir.</p>
                     </div>
                     <div id="lockStatusBadge" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-medium flex items-center gap-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Düzenlemeye Açık
@@ -206,9 +218,33 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        
-        const campaignRef = ref(db, "campaigns");
-        const systemRef = ref(db, "systemControl");
+
+        // ---- BÖLGE TANIMLARI ----
+        // "mevlut" mevcut/asıl bölge, eski verilerle birebir aynı yolu kullanır (veri kaybı olmaz).
+        // "yusuf" yeni bölge, ayrı bir veri yolunda tutulur, birbirine karışmaz.
+        const REGIONS = {
+            mevlut: {
+                key: 'mevlut',
+                label: 'Mevlüt Bilir Bölgesi',
+                campaignsPath: 'campaigns',
+                systemPath: 'systemControl',
+                baseStores: ["Atatürk Cd.", "Anıt", "Larende", "Altıyol", "Çaybaşı", "Gazanfer", "Ahmet Özcan", "Diş Hastanesi", "Uzunharmanlar"]
+            },
+            yusuf: {
+                key: 'yusuf',
+                label: 'Yusuf Yıldız Bölgesi',
+                campaignsPath: 'campaigns_yusuf',
+                systemPath: 'systemControl_yusuf',
+                baseStores: ["Çevreyolu", "Kalfalar", "Abdürreşit", "Yaylapınar", "Hasanköy", "Antalyayolu", "Kaş Caddesi", "Aymanas", "Uluğbey"]
+            }
+        };
+
+        let currentRegionKey = 'mevlut';
+        let campaignRef = ref(db, REGIONS[currentRegionKey].campaignsPath);
+        let systemRef = ref(db, REGIONS[currentRegionKey].systemPath);
+        let unsubCampaign = null;
+        let unsubSystem = null;
+        let lastRawData = null;
 
         let currentUser = { type: 'MS', name: '' };
         let liveStoresList = []; 
@@ -216,21 +252,26 @@
         let allSelectToggle = false; 
         let localCampaignsCache = []; 
 
-        const targetStoresBaseList = [
-            "Atatürk Cd.", "Anıt", "Larende", "Altıyol", "Çaybaşı", "Gazanfer", "Ahmet Özcan", "Diş Hastanesi", "Uzunharmanlar"
-        ];
+        // Satır içi düzenleme state'i
+        let editingId = null;
+        let editDraft = {};
+        // Ürün bazlı birleştirilmiş satırların "detay" açık/kapalı durumu
+        let expandedGroups = new Set();
 
         const loginModal = document.getElementById('loginModal');
         const loginType = document.getElementById('loginType');
+        const loginRegion = document.getElementById('loginRegion');
         const storeNameArea = document.getElementById('storeNameArea');
         const adminKeyArea = document.getElementById('adminKeyArea');
         const loginStoreName = document.getElementById('loginStoreName');
         const loginAdminKey = document.getElementById('loginAdminKey');
         const btnEnterSystem = document.getElementById('btnEnterSystem');
         const currentSessionBadge = document.getElementById('currentSessionBadge');
+        const regionBadge = document.getElementById('regionBadge');
         const adminControls = document.getElementById('adminControls');
         const lockStatusBadge = document.getElementById('lockStatusBadge');
         const btnUnlockSystem = document.getElementById('btnUnlockSystem');
+        const btnSwitchRegion = document.getElementById('btnSwitchRegion');
         const btnLogout = document.getElementById('btnLogout');
         
         const adminStoreSelectArea = document.getElementById('adminStoreSelectArea');
@@ -239,7 +280,6 @@
         const btnSelectAllStores = document.getElementById('btnSelectAllStores');
 
         const campaignForm = document.getElementById('campaignForm');
-        const docIdInput = document.getElementById('docId');
         const productCodeInput = document.getElementById('productCode');
         const productNameInput = document.getElementById('productName');
         const normalPriceInput = document.getElementById('normalPrice');
@@ -248,6 +288,34 @@
         const btnSubmitForm = document.getElementById('btnSubmitForm');
         const btnCancelEdit = document.getElementById('btnCancelEdit');
         const tableBody = document.getElementById('tableBody');
+
+        function updateRegionUI() {
+            regionBadge.textContent = '• ' + REGIONS[currentRegionKey].label;
+            if (btnSwitchRegion) {
+                const otherKey = currentRegionKey === 'mevlut' ? 'yusuf' : 'mevlut';
+                btnSwitchRegion.textContent = `${REGIONS[otherKey].label}ni Görüntüle`;
+            }
+        }
+
+        function switchRegion(key) {
+            currentRegionKey = key;
+            campaignRef = ref(db, REGIONS[key].campaignsPath);
+            systemRef = ref(db, REGIONS[key].systemPath);
+            editingId = null;
+            editDraft = {};
+            expandedGroups = new Set();
+            allSelectToggle = false;
+            if (btnSelectAllStores) btnSelectAllStores.textContent = "Tümünü Seç";
+            updateRegionUI();
+            initLiveSync();
+        }
+
+        if (btnSwitchRegion) {
+            btnSwitchRegion.addEventListener('click', () => {
+                const newRegion = currentRegionKey === 'mevlut' ? 'yusuf' : 'mevlut';
+                switchRegion(newRegion);
+            });
+        }
 
         loginType.addEventListener('change', (e) => {
             if (e.target.value === 'admin') {
@@ -277,10 +345,14 @@
                 let storeName = loginStoreName.value.trim();
                 if (!storeName) return alert('Lütfen mağaza adınızı yazın!');
                 if(storeName.toLowerCase().startsWith("atatürk")) storeName = "Atatürk Cd.";
+                currentRegionKey = loginRegion.value;
+                campaignRef = ref(db, REGIONS[currentRegionKey].campaignsPath);
+                systemRef = ref(db, REGIONS[currentRegionKey].systemPath);
                 currentUser = { type: loginType.value, name: storeName };
                 currentSessionBadge.textContent = `${loginType.value} (${storeName})`;
                 adminStoreSelectArea.classList.add('hidden');
                 loginModal.classList.add('hidden');
+                updateRegionUI();
                 initLiveSync();
             } else {
                 const adminKey = loginAdminKey.value.trim();
@@ -293,12 +365,16 @@
         });
 
         function executeAdminLogin() {
+            currentRegionKey = loginRegion.value || 'mevlut';
+            campaignRef = ref(db, REGIONS[currentRegionKey].campaignsPath);
+            systemRef = ref(db, REGIONS[currentRegionKey].systemPath);
             currentUser = { type: 'admin', name: 'Bölge Sorumlusu' };
             currentSessionBadge.textContent = 'Bölge Sorumlusu';
             adminControls.classList.remove('hidden');
             btnUnlockSystem.classList.remove('hidden');
             adminStoreSelectArea.classList.remove('hidden');
             loginModal.classList.add('hidden');
+            updateRegionUI();
             initLiveSync();
         }
 
@@ -319,13 +395,18 @@
             if (currentUser.type !== 'admin') return;
             const checkedStores = Array.from(adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
             adminStoreCheckboxGroup.innerHTML = "";
-            let storesToRender = [...targetStoresBaseList];
+            let storesToRender = [...REGIONS[currentRegionKey].baseStores];
             
             liveStoresList.forEach(store => {
                 if (!storesToRender.includes(store)) {
                     storesToRender.push(store);
                 }
             });
+
+            if (storesToRender.length === 0) {
+                adminStoreCheckboxGroup.innerHTML = `<div class="text-slate-400 italic py-1">Bu bölgede henüz mağaza yok. Aşağıdan yeni mağaza ekleyin.</div>`;
+                return;
+            }
 
             storesToRender.forEach(store => {
                 const div = document.createElement('div');
@@ -340,7 +421,10 @@
         }
 
         function initLiveSync() {
-            onValue(systemRef, (snapshot) => {
+            if (unsubSystem) unsubSystem();
+            if (unsubCampaign) unsubCampaign();
+
+            unsubSystem = onValue(systemRef, (snapshot) => {
                 isSystemLocked = false;
                 const data = snapshot.val();
                 if (data) {
@@ -359,167 +443,261 @@
                 } else {
                     lockStatusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Düzenlemeye Açık`;
                     lockStatusBadge.className = "px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-medium flex items-center gap-1";
+                    btnSubmitForm.disabled = false;
+                    btnSubmitForm.textContent = "Listeye Ekle";
+                    btnSubmitForm.className = "w-full mt-2 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm cursor-pointer";
                 }
+                renderTable();
             });
 
-            onValue(campaignRef, (snapshot) => {
-                tableBody.innerHTML = "";
-                localCampaignsCache = []; 
-                const rawData = snapshot.val();
-                
-                if (!rawData) {
-                    tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs">Henüz hiç veri girilmedi. İlk veriyi siz girin!</td></tr>`;
-                    liveStoresList = [];
-                    updateAdminCheckboxes();
-                    return;
-                }
+            unsubCampaign = onValue(campaignRef, (snapshot) => {
+                lastRawData = snapshot.val();
+                renderTable();
+            });
+        }
 
-                let singleStoreDocs = [];
-                let multiStoreDocs = [];
+        // Ortak yardımcı: hem tekli hem çoklu (admin) kayıtlar için satırı statik ya da
+        // satır-içi düzenleme moduna göre üretir.
+        function renderEditableRow(data, id, trClasses, storeCellHtml, canEdit, isEditing) {
+            const tr = document.createElement('tr');
+            tr.className = trClasses;
 
-                Object.keys(rawData).forEach(key => {
-                    const docData = { id: key, ...rawData[key] };
-                    localCampaignsCache.push(docData); 
+            if (isEditing) {
+                tr.innerHTML = `
+                    ${storeCellHtml}
+                    <td class="py-2 px-3"><input type="text" class="edit-code edit-input px-2 py-1 bg-white border border-blue-300 rounded-lg text-xs" value="${editDraft.code ?? data.code}"></td>
+                    <td class="py-2 px-3"><input type="text" class="edit-name edit-input px-2 py-1 bg-white border border-blue-300 rounded-lg text-xs" value="${editDraft.name ?? data.name}"></td>
+                    <td class="py-2 px-3"><input type="number" class="edit-qty edit-input px-2 py-1 bg-white border border-blue-300 rounded-lg text-xs text-center" value="${editDraft.quantity ?? data.quantity}" min="1"></td>
+                    <td class="py-2 px-3"><input type="number" step="0.01" class="edit-normal edit-input px-2 py-1 bg-white border border-blue-300 rounded-lg text-xs" value="${editDraft.normalPrice ?? data.normalPrice}"></td>
+                    <td class="py-2 px-3"><input type="number" step="0.01" class="edit-discount edit-input px-2 py-1 bg-white border border-blue-300 rounded-lg text-xs" value="${editDraft.discountPrice ?? data.discountPrice}"></td>
+                    <td class="py-2 px-4 text-right whitespace-nowrap">
+                        <button data-id="${id}" class="btn-inline-save text-emerald-600 hover:text-emerald-800 font-medium text-xs mr-2 cursor-pointer">Kaydet</button>
+                        <button class="btn-inline-cancel text-slate-500 hover:text-slate-700 font-medium text-xs cursor-pointer">İptal</button>
+                    </td>
+                `;
+            } else {
+                tr.innerHTML = `
+                    ${storeCellHtml}
+                    <td class="py-3 px-3 text-slate-600 font-mono text-xs">${data.code}</td>
+                    <td class="py-3 px-3 text-slate-700 font-medium">${data.name}</td>
+                    <td class="py-3 px-3 text-center font-semibold text-slate-900">${data.quantity}</td>
+                    <td class="py-3 px-3 text-slate-600">${parseFloat(data.normalPrice).toFixed(2)} TL</td>
+                    <td class="py-3 px-3 text-blue-700 font-semibold">
+                        ${parseFloat(data.discountPrice).toFixed(2)} TL <span class="text-xs text-emerald-600 font-medium font-mono ml-1">(${data.ratio})</span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        ${canEdit ? `
+                            <button data-id="${id}" class="btn-edit text-blue-600 hover:text-blue-800 font-medium text-xs mr-3 cursor-pointer">Düzenle</button>
+                            <button data-id="${id}" class="btn-delete text-rose-600 hover:text-rose-800 font-medium text-xs cursor-pointer">Sil</button>
+                        ` : `<span class="text-xs text-slate-400 italic">${isSystemLocked ? 'Kilitli' : 'Okuma Modu'}</span>`}
+                    </td>
+                `;
+            }
+            return tr;
+        }
 
-                    if (Array.isArray(docData.storeName) && docData.storeName.length > 1) {
-                        multiStoreDocs.push(docData);
-                    } else {
-                        const cleanData = { ...docData };
-                        if (Array.isArray(cleanData.storeName)) {
-                            cleanData.storeName = cleanData.storeName[0] || "Bilinmeyen Mağaza";
-                        }
-                        singleStoreDocs.push(cleanData);
-                    }
-                });
+        function summarizeGroup(entries) {
+            const totalQty = entries.reduce((s, e) => s + (parseInt(e.quantity) || 0), 0);
+            const freq = {};
+            entries.forEach(e => {
+                const key = `${e.normalPrice}|${e.discountPrice}`;
+                freq[key] = (freq[key] || 0) + 1;
+            });
+            let bestKey = null, bestCount = -1;
+            Object.keys(freq).forEach(k => { if (freq[k] > bestCount) { bestCount = freq[k]; bestKey = k; } });
+            const [normalPrice, discountPrice] = bestKey.split('|').map(Number);
+            const isUniform = Object.keys(freq).length === 1;
+            let ratio = "%0";
+            if (normalPrice > discountPrice) ratio = `%${Math.round(((normalPrice - discountPrice) / normalPrice) * 100)}`;
+            else if (normalPrice < discountPrice) ratio = "Fiyat Artışı";
+            return { totalQty, normalPrice, discountPrice, ratio, isUniform };
+        }
 
-                singleStoreDocs.sort((a, b) => a.storeName.localeCompare(b.storeName));
-                multiStoreDocs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        function renderTable() {
+            const rawData = lastRawData;
+            tableBody.innerHTML = "";
+            localCampaignsCache = [];
 
+            if (!rawData) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 text-xs">Henüz hiç veri girilmedi. İlk veriyi siz girin!</td></tr>`;
                 liveStoresList = [];
-                singleStoreDocs.forEach(d => { if(!liveStoresList.includes(d.storeName)) liveStoresList.push(d.storeName); });
-                multiStoreDocs.forEach(d => {
-                    d.storeName.forEach(s => { if(!liveStoresList.includes(s)) liveStoresList.push(s); });
-                });
                 updateAdminCheckboxes();
+                return;
+            }
 
-                // 1. ETAP: ORTAK KAMPANYALARI BASTIRMA
-                if (multiStoreDocs.length > 0) {
-                    multiStoreDocs.forEach(data => {
-                        const id = data.id;
-                        const isOwner = currentUser.type === 'admin'; 
-                        const canEdit = isOwner && !isSystemLocked;
+            let singleStoreDocs = [];
+            let multiStoreDocs = [];
 
-                        const storeCount = data.storeName.length;
-                        const storeListText = data.storeName.join(', ');
-                        const displayStoreName = storeCount >= targetStoresBaseList.length ? "Tüm Mağazalar" : `${storeCount} Mağaza (Ortak)`;
+            Object.keys(rawData).forEach(key => {
+                const docData = { id: key, ...rawData[key] };
+                localCampaignsCache.push(docData);
 
-                        const tr = document.createElement('tr');
-                        tr.className = `bg-indigo-50/80 border-b border-indigo-100 hover:bg-indigo-100/60 transition-colors`;
-                        
-                        tr.innerHTML = `
-                            <td class="py-3 px-4 font-bold text-indigo-900 border-r border-indigo-200/40 align-middle text-sm" title="${storeListText}">
-                                <div class="flex flex-col">
-                                    <span>${displayStoreName}</span>
-                                    <span class="text-[10px] text-indigo-500 font-normal truncate max-w-[150px]">${storeListText}</span>
-                                </div>
-                            </td>
-                            <td class="py-3 px-3 text-slate-600 font-mono text-xs">${data.code}</td>
-                            <td class="py-3 px-3 text-slate-700 font-medium">${data.name}</td>
-                            <td class="py-3 px-3 text-center font-semibold text-slate-900">${data.quantity}</td>
-                            <td class="py-3 px-3 text-slate-600">${parseFloat(data.normalPrice).toFixed(2)} TL</td>
-                            <td class="py-3 px-3 text-blue-700 font-semibold">
-                                ${parseFloat(data.discountPrice).toFixed(2)} TL <span class="text-xs text-emerald-600 font-medium font-mono ml-1">(${data.ratio})</span>
-                            </td>
-                            <td class="py-3 px-4 text-right">
-                                ${canEdit ? `
-                                    <button data-id="${id}" data-type="multi" class="btn-edit text-blue-600 hover:text-blue-800 font-medium text-xs mr-3 cursor-pointer">Düzenle</button>
-                                    <button data-id="${id}" class="btn-delete text-rose-600 hover:text-rose-800 font-medium text-xs cursor-pointer">Sil</button>
-                                ` : `<span class="text-xs text-slate-400 italic">${isSystemLocked ? 'Kilitli' : 'Okuma Modu'}</span>`}
-                            </td>
-                        `;
-                        tableBody.appendChild(tr);
-                    });
-
-                    const middleSeparator = document.createElement('tr');
-                    middleSeparator.className = "bg-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider select-none";
-                    middleSeparator.innerHTML = `<td colspan="7" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold border-y border-slate-300">Mağaza Bazlı Harici Kampanyalar</td>`;
-                    tableBody.appendChild(middleSeparator);
-                }
-
-                // 2. ETAP: HARİCİ GRUPLARI BASTIRMA
-                const groupedCampaigns = {};
-                singleStoreDocs.forEach(docData => {
-                    if (!groupedCampaigns[docData.storeName]) groupedCampaigns[docData.storeName] = [];
-                    groupedCampaigns[docData.storeName].push(docData);
-                });
-
-                const storeKeys = Object.keys(groupedCampaigns);
-                
-                storeKeys.forEach((storeName, storeIndex) => {
-                    const items = groupedCampaigns[storeName];
-                    const itemCount = items.length;
-
-                    if (storeIndex > 0) {
-                        const separatorTr = document.createElement('tr');
-                        separatorTr.className = "bg-slate-200/40 h-6 border-y border-slate-300/20";
-                        separatorTr.innerHTML = `<td colspan="7" class="py-1"></td>`;
-                        tableBody.appendChild(separatorTr);
+                if (Array.isArray(docData.storeName) && docData.storeName.length > 1) {
+                    multiStoreDocs.push(docData);
+                } else {
+                    const cleanData = { ...docData };
+                    if (Array.isArray(cleanData.storeName)) {
+                        cleanData.storeName = cleanData.storeName[0] || "Bilinmeyen Mağaza";
                     }
+                    singleStoreDocs.push(cleanData);
+                }
+            });
 
-                    let combinedList = [...targetStoresBaseList];
-                    if(!combinedList.includes(storeName)) combinedList.push(storeName);
-                    const colorIndex = combinedList.indexOf(storeName) % 5;
-                    const colorClass = `store-color-${colorIndex}`;
+            singleStoreDocs.sort((a, b) => a.storeName.localeCompare(b.storeName));
+            // Not: timestamp yerine createdAt (oluşturulma anı) kullanılıyor ki bir kayıt
+            // düzenlendiğinde listenin başına atlamasın, sırası korunsun.
+            multiStoreDocs.sort((a, b) => (a.createdAt || a.timestamp || 0) - (b.createdAt || b.timestamp || 0));
 
-                    items.forEach((data, index) => {
-                        const id = data.id;
-                        const isOwner = currentUser.type === 'admin' || (currentUser.name === data.storeName);
-                        const canEdit = isOwner && !isSystemLocked;
+            liveStoresList = [];
+            singleStoreDocs.forEach(d => { if(!liveStoresList.includes(d.storeName)) liveStoresList.push(d.storeName); });
+            multiStoreDocs.forEach(d => {
+                d.storeName.forEach(s => { if(!liveStoresList.includes(s)) liveStoresList.push(s); });
+            });
+            updateAdminCheckboxes();
 
-                        const tr = document.createElement('tr');
-                        tr.className = `${colorClass} transition-colors border-b border-slate-100 hover:bg-slate-100/40`;
+            const baseStoreCount = REGIONS[currentRegionKey].baseStores.length;
 
-                        const storeTd = index === 0 
-                            ? `<td class="py-3 px-4 font-bold text-slate-900 align-middle border-r border-slate-200/50 text-sm" rowspan="${itemCount}">${storeName}</td>`
-                            : '';
+            // 1. ETAP: ORTAK KAMPANYALARI BASTIRMA (admin tarafından çoklu mağaza seçilerek girilenler)
+            if (multiStoreDocs.length > 0) {
+                multiStoreDocs.forEach(data => {
+                    const id = data.id;
+                    const isOwner = currentUser.type === 'admin'; 
+                    const canEdit = isOwner && !isSystemLocked;
+                    const isEditing = editingId === id;
 
-                        tr.innerHTML = `
-                            ${storeTd}
-                            <td class="py-3 px-3 text-slate-600 font-mono text-xs">${data.code}</td>
-                            <td class="py-3 px-3 text-slate-700 font-medium">${data.name}</td>
-                            <td class="py-3 px-3 text-center font-semibold text-slate-900">${data.quantity}</td>
-                            <td class="py-3 px-3 text-slate-600">${parseFloat(data.normalPrice).toFixed(2)} TL</td>
-                            <td class="py-3 px-3 text-blue-700 font-semibold">
-                                ${parseFloat(data.discountPrice).toFixed(2)} TL <span class="text-xs text-emerald-600 font-medium font-mono ml-1">(${data.ratio})</span>
-                            </td>
-                            <td class="py-3 px-4 text-right">
-                                ${canEdit ? `
-                                    <button data-id="${id}" data-type="single" class="btn-edit text-blue-600 hover:text-blue-800 font-medium text-xs mr-3 cursor-pointer">Düzenle</button>
-                                    <button data-id="${id}" class="btn-delete text-rose-600 hover:text-rose-800 font-medium text-xs cursor-pointer">Sil</button>
-                                ` : `<span class="text-xs text-slate-400 italic">${isSystemLocked ? 'Kilitli' : 'Okuma Modu'}</span>`}
-                            </td>
-                        `;
-                        tableBody.appendChild(tr);
-                    });
+                    const storeCount = data.storeName.length;
+                    const storeListText = data.storeName.join(', ');
+                    const displayStoreName = (baseStoreCount > 0 && storeCount >= baseStoreCount) ? "Tüm Mağazalar" : `${storeCount} Mağaza (Ortak)`;
+
+                    const storeCellHtml = `
+                        <td class="py-3 px-4 font-bold text-indigo-900 border-r border-indigo-200/40 align-top text-sm" title="${storeListText}">
+                            <div class="flex flex-col">
+                                <span>${displayStoreName}</span>
+                                <span class="text-[10px] text-indigo-500 font-normal truncate max-w-[150px]">${storeListText}</span>
+                            </div>
+                        </td>`;
+
+                    tableBody.appendChild(renderEditableRow(data, id, "bg-indigo-50/80 border-b border-indigo-100 hover:bg-indigo-100/60 transition-colors", storeCellHtml, canEdit, isEditing));
                 });
 
-                document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', handleEdit));
-                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', handleDelete));
+                const middleSeparator = document.createElement('tr');
+                middleSeparator.className = "bg-slate-200 text-slate-700 text-[10px] font-bold uppercase tracking-wider select-none";
+                middleSeparator.innerHTML = `<td colspan="7" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold border-y border-slate-300">Mağaza Bazlı Harici Kampanyalar</td>`;
+                tableBody.appendChild(middleSeparator);
+            }
+
+            // 2. ETAP: HARİCİ GİRİŞLER — AYNI ÜRÜNÜ İSTEYEN FARKLI MAĞAZALAR TEK SATIRDA BİRLEŞTİRİLİR
+            const productGroups = {};
+            singleStoreDocs.forEach(docData => {
+                const key = (docData.code || docData.name || 'kod-yok').toString().trim().toUpperCase();
+                if (!productGroups[key]) productGroups[key] = [];
+                productGroups[key].push(docData);
             });
+
+            const groupKeys = Object.keys(productGroups).sort((a, b) => {
+                const ta = Math.min(...productGroups[a].map(d => d.createdAt || d.timestamp || 0));
+                const tb = Math.min(...productGroups[b].map(d => d.createdAt || d.timestamp || 0));
+                return ta - tb;
+            });
+
+            groupKeys.forEach(key => {
+                const entries = productGroups[key];
+
+                if (entries.length === 1) {
+                    const data = entries[0];
+                    const isOwner = currentUser.type === 'admin' || currentUser.name === data.storeName;
+                    const canEdit = isOwner && !isSystemLocked;
+                    const isEditing = editingId === data.id;
+                    const storeCellHtml = `<td class="py-3 px-4 font-semibold text-slate-900 border-r border-slate-200/50 text-sm align-top">${data.storeName}</td>`;
+                    tableBody.appendChild(renderEditableRow(data, data.id, "border-b border-slate-100 hover:bg-slate-50/60 transition-colors", storeCellHtml, canEdit, isEditing));
+                } else {
+                    const summary = summarizeGroup(entries);
+                    const storeNamesDisplay = entries.map(e => e.storeName).join('<br>');
+                    const isExpanded = expandedGroups.has(key);
+
+                    const trSummary = document.createElement('tr');
+                    trSummary.className = "bg-amber-50/70 border-b border-amber-100 hover:bg-amber-100/50 transition-colors";
+                    trSummary.innerHTML = `
+                        <td class="py-3 px-4 font-bold text-amber-900 border-r border-amber-200/40 text-xs leading-relaxed align-top">${storeNamesDisplay}</td>
+                        <td class="py-3 px-3 text-slate-600 font-mono text-xs align-top">${entries[0].code}</td>
+                        <td class="py-3 px-3 text-slate-700 font-medium align-top">${entries[0].name}</td>
+                        <td class="py-3 px-3 text-center font-semibold text-slate-900 align-top">${summary.totalQty}</td>
+                        <td class="py-3 px-3 text-slate-600 align-top">${summary.normalPrice.toFixed(2)} TL</td>
+                        <td class="py-3 px-3 text-blue-700 font-semibold align-top">
+                            ${summary.discountPrice.toFixed(2)} TL <span class="text-xs text-emerald-600 font-mono ml-1">(${summary.ratio})</span>
+                            ${!summary.isUniform ? `<div class="text-[10px] text-amber-600 mt-0.5 font-normal">Fiyatlar mağazaya göre farklı, detaya bakın</div>` : ''}
+                        </td>
+                        <td class="py-3 px-4 text-right align-top">
+                            <button data-group="${key}" class="btn-toggle-detail text-amber-700 hover:text-amber-900 font-medium text-xs cursor-pointer whitespace-nowrap">${isExpanded ? 'Gizle ▲' : `${entries.length} Mağaza — Detay ▼`}</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(trSummary);
+
+                    if (isExpanded) {
+                        entries.forEach(data => {
+                            const isOwner = currentUser.type === 'admin' || currentUser.name === data.storeName;
+                            const canEdit = isOwner && !isSystemLocked;
+                            const isEditing = editingId === data.id;
+                            const storeCellHtml = `<td class="py-2 px-4 pl-8 text-xs text-slate-500 border-r border-slate-200/40 align-top">↳ ${data.storeName}</td>`;
+                            tableBody.appendChild(renderEditableRow(data, data.id, "bg-slate-50/70 border-b border-slate-100 text-xs", storeCellHtml, canEdit, isEditing));
+                        });
+                    }
+                }
+            });
+
+            // Olay dinleyicileri
+            document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', (e) => {
+                const id = e.target.getAttribute('data-id');
+                const doc = localCampaignsCache.find(d => d.id === id);
+                if (!doc) return;
+                editingId = id;
+                editDraft = { code: doc.code, name: doc.name, quantity: doc.quantity, normalPrice: doc.normalPrice, discountPrice: doc.discountPrice };
+                renderTable();
+            }));
+            document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', handleDelete));
+            document.querySelectorAll('.btn-inline-save').forEach(btn => btn.addEventListener('click', (e) => handleInlineSave(e.target.getAttribute('data-id'))));
+            document.querySelectorAll('.btn-inline-cancel').forEach(btn => btn.addEventListener('click', () => {
+                editingId = null;
+                editDraft = {};
+                renderTable();
+            }));
+            document.querySelectorAll('.btn-toggle-detail').forEach(btn => btn.addEventListener('click', (e) => {
+                const g = e.target.getAttribute('data-group');
+                if (expandedGroups.has(g)) expandedGroups.delete(g); else expandedGroups.add(g);
+                renderTable();
+            }));
+
+            // Düzenlenmekte olan satırın input'larını canlı olarak editDraft'a bağla
+            // (başka bir kullanıcıdan gelen güncelleme tabloyu yeniden çizerse veri kaybolmasın)
+            if (editingId) {
+                const codeEl = tableBody.querySelector('.edit-code');
+                const nameEl = tableBody.querySelector('.edit-name');
+                const qtyEl = tableBody.querySelector('.edit-qty');
+                const normEl = tableBody.querySelector('.edit-normal');
+                const discEl = tableBody.querySelector('.edit-discount');
+                if (codeEl) codeEl.addEventListener('input', (e) => editDraft.code = e.target.value);
+                if (nameEl) nameEl.addEventListener('input', (e) => editDraft.name = e.target.value);
+                if (qtyEl) qtyEl.addEventListener('input', (e) => editDraft.quantity = e.target.value);
+                if (normEl) normEl.addEventListener('input', (e) => editDraft.normalPrice = e.target.value);
+                if (discEl) discEl.addEventListener('input', (e) => editDraft.discountPrice = e.target.value);
+            }
         }
 
         campaignForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (isSystemLocked && currentUser.type !== 'admin') return alert('Sistem kilitli!');
 
-            const docId = docIdInput.value;
             const inputProductCode = productCodeInput.value.trim();
             const normP = parseFloat(normalPriceInput.value);
             const discP = parseFloat(discountValueInput.value);
 
-            let calculatedRatio = "0%";
+            let calculatedRatio = "%0";
             if(normP > 0 && normP > discP) {
                 const ratioNum = ((normP - discP) / normP) * 100;
+                if (ratioNum > 33) {
+                    alert('Lütfen fiyatı düzeltin, kampanya oranı %33\'ü geçemez.');
+                    return;
+                }
                 calculatedRatio = `%${Math.round(ratioNum)}`;
             } else if (normP === discP) {
                 calculatedRatio = "%0";
@@ -537,137 +715,130 @@
                 timestamp: new Date().getTime()
             };
 
-            if (!docId) {
-                if (currentUser.type === 'admin') {
-                    const selectedStores = Array.from(adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-                    const manualStore = adminManualStoreName.value.trim();
-                    if (manualStore) selectedStores.push(manualStore);
+            if (currentUser.type === 'admin') {
+                const selectedStores = Array.from(adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                const manualStore = adminManualStoreName.value.trim();
+                if (manualStore) selectedStores.push(manualStore);
 
-                    if (selectedStores.length === 0) {
-                        return alert('Lütfen kampanya eklenecek en az bir mağaza seçin veya yeni mağaza adı yazın!');
-                    }
-
-                    try {
-                        if (selectedStores.length > 1) {
-                            const storeSignature = selectedStores.sort().join(',');
-                            const isDuplicate = localCampaignsCache.some(item => {
-                                const itemSig = Array.isArray(item.storeName) ? item.storeName.sort().join(',') : item.storeName;
-                                return itemSig === storeSignature && item.code === inputProductCode;
-                            });
-                            if (isDuplicate) return alert(`Bu ortak mağaza grubu için "${inputProductCode}" ürünü zaten eklenmiş!`);
-                            
-                            const newRecordRef = push(campaignRef);
-                            await set(newRecordRef, { ...baseCampaignData, storeName: selectedStores });
-                        } else {
-                            const singleStore = selectedStores[0];
-                            const isDuplicate = localCampaignsCache.some(item => !Array.isArray(item.storeName) && item.storeName === singleStore && item.code === inputProductCode);
-                            if (isDuplicate) return alert(`"${singleStore}" mağazası için bu ürün zaten mevcut!`);
-                            
-                            const newRecordRef = push(campaignRef);
-                            await set(newRecordRef, { ...baseCampaignData, storeName: singleStore });
-                        }
-                    } catch(err) { alert("Hata detayı: " + err.message); return; }
-
-                } else {
-                    const isDuplicate = localCampaignsCache.some(item => !Array.isArray(item.storeName) && item.storeName === currentUser.name && item.code === inputProductCode);
-                    if (isDuplicate) {
-                        return alert(`"${inputProductCode}" kodlu ürün bu mağaza için zaten eklenmiş!`);
-                    }
-
-                    try {
-                        const newRecordRef = push(campaignRef);
-                        await set(newRecordRef, { ...baseCampaignData, storeName: currentUser.name });
-                    } catch(err) { alert("Hata detayı: " + err.message); return; }
+                if (selectedStores.length === 0) {
+                    return alert('Lütfen kampanya eklenecek en az bir mağaza seçin veya yeni mağaza adı yazın!');
                 }
-            } else {
+
                 try {
-                    let updatedStoreName = currentUser.name;
-                    if (currentUser.type === 'admin') {
-                        const manualName = adminManualStoreName.value.trim();
-                        if (manualName) {
-                            updatedStoreName = manualName;
-                        } else {
-                            const selectedStores = Array.from(adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-                            updatedStoreName = selectedStores.length > 1 ? selectedStores : (selectedStores[0] || targetStoresBaseList[0]);
-                        }
+                    if (selectedStores.length > 1) {
+                        const storeSignature = selectedStores.sort().join(',');
+                        const isDuplicate = localCampaignsCache.some(item => {
+                            const itemSig = Array.isArray(item.storeName) ? item.storeName.sort().join(',') : item.storeName;
+                            return itemSig === storeSignature && item.code === inputProductCode;
+                        });
+                        if (isDuplicate) return alert(`Bu ortak mağaza grubu için "${inputProductCode}" ürünü zaten eklenmiş!`);
+                        
+                        const newRecordRef = push(campaignRef);
+                        await set(newRecordRef, { ...baseCampaignData, storeName: selectedStores, createdAt: Date.now() });
+                    } else {
+                        const singleStore = selectedStores[0];
+                        const isDuplicate = localCampaignsCache.some(item => !Array.isArray(item.storeName) && item.storeName === singleStore && item.code === inputProductCode);
+                        if (isDuplicate) return alert(`"${singleStore}" mağazası için bu ürün zaten mevcut!`);
+                        
+                        const newRecordRef = push(campaignRef);
+                        await set(newRecordRef, { ...baseCampaignData, storeName: singleStore, createdAt: Date.now() });
                     }
-                    const singleDocRef = ref(db, `campaigns/${docId}`);
-                    await update(singleDocRef, { ...baseCampaignData, storeName: updatedStoreName });
+                } catch(err) { alert("Hata detayı: " + err.message); return; }
+
+            } else {
+                const isDuplicate = localCampaignsCache.some(item => !Array.isArray(item.storeName) && item.storeName === currentUser.name && item.code === inputProductCode);
+                if (isDuplicate) {
+                    return alert(`"${inputProductCode}" kodlu ürün bu mağaza için zaten eklenmiş!`);
+                }
+
+                try {
+                    const newRecordRef = push(campaignRef);
+                    await set(newRecordRef, { ...baseCampaignData, storeName: currentUser.name, createdAt: Date.now() });
                 } catch(err) { alert("Hata detayı: " + err.message); return; }
             }
 
             campaignForm.reset();
-            docIdInput.value = "";
             adminManualStoreName.value = ""; 
             allSelectToggle = false;
             if (btnSelectAllStores) btnSelectAllStores.textContent = "Tümünü Seç";
             if(currentUser.type === 'admin') {
                 adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
             }
-            btnSubmitForm.textContent = "Listeye Ekle / Güncelle";
-            btnCancelEdit.classList.add('hidden');
         });
 
-        async function handleEdit(e) {
-            const id = e.target.getAttribute('data-id');
-            const targetDoc = localCampaignsCache.find(item => item.id === id);
-            if (!targetDoc) return;
+        async function handleInlineSave(id) {
+            const code = (editDraft.code || "").trim();
+            const name = (editDraft.name || "").trim();
+            const normP = parseFloat(editDraft.normalPrice);
+            const discP = parseFloat(editDraft.discountPrice);
+            const qty = parseInt(editDraft.quantity);
 
-            productCodeInput.value = targetDoc.code;
-            productNameInput.value = targetDoc.name;
-            quantityInput.value = targetDoc.quantity;
-            normalPriceInput.value = targetDoc.normalPrice;
-            discountValueInput.value = targetDoc.discountPrice;
-            
-            if (currentUser.type === 'admin') {
-                adminManualStoreName.value = "";
-                const checkboxes = adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]');
-                const activeStores = Array.isArray(targetDoc.storeName) ? targetDoc.storeName : [targetDoc.storeName];
-                
-                checkboxes.forEach(cb => {
-                    cb.checked = activeStores.includes(cb.value);
-                });
-                
-                if(!Array.isArray(targetDoc.storeName) && !targetStoresBaseList.includes(targetDoc.storeName)) {
-                    adminManualStoreName.value = targetDoc.storeName;
-                }
+            if (!code || !name || isNaN(normP) || isNaN(discP) || isNaN(qty) || qty < 1) {
+                alert('Lütfen tüm alanları doğru şekilde doldurun.');
+                return;
             }
-            docIdInput.value = id;
-            btnSubmitForm.textContent = "Değişiklikleri Kaydet";
-            btnCancelEdit.classList.remove('hidden');
+
+            let ratio = "%0";
+            if (normP > discP) {
+                const ratioNum = ((normP - discP) / normP) * 100;
+                if (ratioNum > 33) {
+                    alert('Lütfen fiyatı düzeltin, kampanya oranı %33\'ü geçemez.');
+                    return;
+                }
+                ratio = `%${Math.round(ratioNum)}`;
+            } else if (normP === discP) {
+                ratio = "%0";
+            } else {
+                ratio = "Fiyat Artışı";
+            }
+
+            try {
+                const targetRef = ref(db, `${REGIONS[currentRegionKey].campaignsPath}/${id}`);
+                await update(targetRef, {
+                    code, name,
+                    normalPrice: normP,
+                    discountPrice: discP,
+                    quantity: qty,
+                    ratio,
+                    timestamp: Date.now()
+                    // createdAt kasıtlı olarak gönderilmiyor; satırın sıradaki yeri korunuyor.
+                });
+                editingId = null;
+                editDraft = {};
+            } catch(err) {
+                alert("Hata detayı: " + err.message);
+            }
         }
 
         async function handleDelete(e) {
             if (confirm('Silmek istediğinize emin misiniz?')) {
                 const id = e.target.getAttribute('data-id');
-                const singleDocRef = ref(db, `campaigns/${id}`);
-                await remove(singleDocRef);
+                const targetRef = ref(db, `${REGIONS[currentRegionKey].campaignsPath}/${id}`);
+                await remove(targetRef);
             }
         }
 
         btnCancelEdit.addEventListener('click', () => {
             campaignForm.reset();
-            docIdInput.value = "";
             adminManualStoreName.value = "";
             allSelectToggle = false;
             if (btnSelectAllStores) btnSelectAllStores.textContent = "Tümünü Seç";
             if(currentUser.type === 'admin') {
                 adminStoreCheckboxGroup.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
             }
-            btnSubmitForm.textContent = "Listeye Ekle / Güncelle";
-            btnCancelEdit.classList.add('hidden');
         });
 
         document.getElementById('btnExcelDownload').addEventListener('click', async () => {
             const snapshot = await get(campaignRef);
             const rawData = snapshot.val();
             let docs = [];
+            const baseStoreCount = REGIONS[currentRegionKey].baseStores.length;
             
             if (rawData) {
                 Object.keys(rawData).forEach(key => {
                     const data = rawData[key];
                     if(Array.isArray(data.storeName)) {
-                        data.sortName = data.storeName.length >= targetStoresBaseList.length ? "Tüm Mağazalar" : `${data.storeName.length} Mağaza (Ortak)`;
+                        data.sortName = (baseStoreCount > 0 && data.storeName.length >= baseStoreCount) ? "Tüm Mağazalar" : `${data.storeName.length} Mağaza (Ortak)`;
                     } else {
                         data.sortName = data.storeName;
                     }
@@ -729,7 +900,7 @@
             ];
 
             XLSX.utils.book_append_sheet(workbook, worksheet, "Talepler");
-            XLSX.writeFile(workbook, "Kampanya_Talepleri.xlsx");
+            XLSX.writeFile(workbook, `Kampanya_Talepleri_${REGIONS[currentRegionKey].label.replace(/\s+/g,'_')}.xlsx`);
         });
 
         document.getElementById('btnSendMail').addEventListener('click', async () => {
@@ -742,29 +913,29 @@
                     await set(newSysRef, { status: 'sent' });
                 } else {
                     const firstKey = Object.keys(data)[0];
-                    await update(ref(db, `systemControl/${firstKey}`), { status: 'sent' });
+                    await update(ref(db, `${REGIONS[currentRegionKey].systemPath}/${firstKey}`), { status: 'sent' });
                 }
                 const emailTarget = "fatma.torun@bim.com.tr"; 
-                const subject = encodeURIComponent("Kampanya Talebi Hk.");
+                const subject = encodeURIComponent(`Kampanya Talebi Hk. (${REGIONS[currentRegionKey].label})`);
                 const body = encodeURIComponent("Fatma Hanım kolay gelsin,\n\nKampanya talebimiz vardır. İlgilenirseniz seviniriz.\n\nİyi çalışmalar.");
                 window.location.href = `mailto:${emailTarget}?subject=${subject}&body=${body}`;
             }
         });
 
         btnUnlockSystem.addEventListener('click', async () => {
-            if (confirm('Sistem sıfırlanacak ve yeni bir kampanya dönemi başlayacaktır. Eski veriler silinecektir. Emin misiniz?')) {
+            if (confirm(`"${REGIONS[currentRegionKey].label}" sıfırlanacak ve yeni bir kampanya dönemi başlayacaktır. Eski veriler silinecektir. Emin misiniz?`)) {
                 try {
                     const systemSnapshot = await get(systemRef);
                     const systemData = systemSnapshot.val();
                     if (systemData) {
                         const firstKey = Object.keys(systemData)[0];
-                        await update(ref(db, `systemControl/${firstKey}`), { status: 'open' });
+                        await update(ref(db, `${REGIONS[currentRegionKey].systemPath}/${firstKey}`), { status: 'open' });
                     }
                     
                     await remove(campaignRef);
                     
                     btnSubmitForm.disabled = false;
-                    btnSubmitForm.textContent = "Listeye Ekle / Güncelle";
+                    btnSubmitForm.textContent = "Listeye Ekle";
                     btnSubmitForm.className = "w-full mt-2 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm cursor-pointer";
                     alert('Sistem yeni kampanya dönemine açıldı, veriler sıfırlandı!');
                 } catch (err) {
@@ -775,4 +946,3 @@
     </script>
 </body>
 </html>
-
