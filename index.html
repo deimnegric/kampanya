@@ -879,59 +879,77 @@
         document.getElementById('btnExcelDownload').addEventListener('click', async () => {
             const snapshot = await get(campaignRef);
             const rawData = snapshot.val();
-            let docs = [];
             const baseStoreCount = REGIONS[currentRegionKey].baseStores.length;
-            
-            if (rawData) {
-                Object.keys(rawData).forEach(key => {
-                    const data = rawData[key];
-                    if(Array.isArray(data.storeName)) {
-                        data.sortName = (baseStoreCount > 0 && data.storeName.length >= baseStoreCount) ? "Tüm Mağazalar" : `${data.storeName.length} Mağaza (Ortak)`;
-                    } else {
-                        data.sortName = data.storeName;
-                    }
-                    docs.push(data);
-                });
-            }
-            
-            docs.sort((a, b) => {
-                const storeCompare = a.sortName.localeCompare(b.sortName);
-                if (storeCompare !== 0) return storeCompare;
-                
-                const codeA = String(a.code || "");
-                const codeB = String(b.code || "");
-                return codeB.localeCompare(codeA, undefined, { numeric: true, sensitivity: 'base' });
-            });
 
-            const workbook = XLSX.utils.book_new();
             const worksheetData = [];
-            
             worksheetData.push(["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"]);
+            const sectionHeaderRows = [];
 
-            let lastStore = "";
+            if (rawData) {
+                let singleStoreDocs = [];
+                let multiStoreDocs = [];
 
-            docs.forEach(d => {
-                if (lastStore !== "" && lastStore !== d.sortName) {
-                    worksheetData.push([]);
+                Object.keys(rawData).forEach(key => {
+                    const data = { id: key, ...rawData[key] };
+                    if (Array.isArray(data.storeName) && data.storeName.length > 1) {
+                        multiStoreDocs.push(data);
+                    } else {
+                        const clean = { ...data };
+                        if (Array.isArray(clean.storeName)) clean.storeName = clean.storeName[0] || "Bilinmeyen Mağaza";
+                        singleStoreDocs.push(clean);
+                    }
+                });
+
+                multiStoreDocs.sort((a, b) => (a.createdAt || a.timestamp || 0) - (b.createdAt || b.timestamp || 0));
+
+                // ORTAK KAMPANYALAR (admin tarafından çoklu mağaza seçilerek girilenler)
+                if (multiStoreDocs.length > 0) {
+                    sectionHeaderRows.push(worksheetData.length);
+                    worksheetData.push(["ORTAK KAMPANYALAR", "", "", "", "", "", ""]);
+                    multiStoreDocs.forEach(d => {
+                        const storeCount = d.storeName.length;
+                        const label = (baseStoreCount > 0 && storeCount >= baseStoreCount) ? "Tüm Mağazalar" : d.storeName.join(', ');
+                        const cleanRatio = d.ratio ? d.ratio.replace('%', '') + '%' : '';
+                        worksheetData.push([label, d.code, d.name, Number(d.quantity), Number(d.normalPrice), Number(d.discountPrice), cleanRatio]);
+                    });
                     worksheetData.push([]);
                 }
 
-                let isFirst = (lastStore !== d.sortName);
-                let cleanRatio = d.ratio ? d.ratio.replace('%', '') + '%' : '';
-                
-                worksheetData.push([
-                    isFirst ? d.sortName : "",
-                    d.code,
-                    d.name,
-                    Number(d.quantity),
-                    Number(d.normalPrice),
-                    Number(d.discountPrice),
-                    cleanRatio
-                ]);
-                
-                lastStore = d.sortName;
-            });
+                // MAĞAZA BAZLI HARİCİ KAMPANYALAR — aynı ürünü isteyen farklı mağazalar tek satırda birleştirilir,
+                // diğer ürünler kendi satırında ayrı ayrı devam eder (ekrandaki canlı liste ile aynı mantık).
+                const productGroups = {};
+                singleStoreDocs.forEach(d => {
+                    const key = (d.code || d.name || 'kod-yok').toString().trim().toUpperCase();
+                    if (!productGroups[key]) productGroups[key] = [];
+                    productGroups[key].push(d);
+                });
 
+                const groupKeys = Object.keys(productGroups).sort((a, b) => {
+                    const ta = Math.min(...productGroups[a].map(d => d.createdAt || d.timestamp || 0));
+                    const tb = Math.min(...productGroups[b].map(d => d.createdAt || d.timestamp || 0));
+                    return ta - tb;
+                });
+
+                if (groupKeys.length > 0) {
+                    sectionHeaderRows.push(worksheetData.length);
+                    worksheetData.push(["MAĞAZA BAZLI HARİCİ KAMPANYALAR", "", "", "", "", "", ""]);
+                    groupKeys.forEach(key => {
+                        const entries = productGroups[key];
+                        if (entries.length === 1) {
+                            const d = entries[0];
+                            const cleanRatio = d.ratio ? d.ratio.replace('%', '') + '%' : '';
+                            worksheetData.push([d.storeName, d.code, d.name, Number(d.quantity), Number(d.normalPrice), Number(d.discountPrice), cleanRatio]);
+                        } else {
+                            const summary = summarizeGroup(entries);
+                            const storeNames = entries.map(e => e.storeName).join(', ');
+                            const cleanRatio = summary.ratio ? summary.ratio.replace('%', '') + '%' : '';
+                            worksheetData.push([storeNames, entries[0].code, entries[0].name, summary.totalQty, summary.normalPrice, summary.discountPrice, cleanRatio]);
+                        }
+                    });
+                }
+            }
+
+            const workbook = XLSX.utils.book_new();
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
             const range = XLSX.utils.decode_range(worksheet['!ref']);
@@ -942,9 +960,16 @@
                     worksheet[cellRef].s.alignment = { horizontal: "right" };
                 }
             }
+            sectionHeaderRows.forEach(r => {
+                const cellRef = XLSX.utils.encode_cell({ r: r, c: 0 });
+                if (worksheet[cellRef]) {
+                    if (!worksheet[cellRef].s) worksheet[cellRef].s = {};
+                    worksheet[cellRef].s.font = { bold: true };
+                }
+            });
 
             worksheet['!cols'] = [
-                { wch: 22 }, { wch: 15 }, { wch: 22 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 10 }
+                { wch: 32 }, { wch: 15 }, { wch: 22 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 10 }
             ];
 
             XLSX.utils.book_append_sheet(workbook, worksheet, "Talepler");
