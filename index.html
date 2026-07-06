@@ -101,6 +101,9 @@
                 <button id="btnExcelDownload" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
                     Excel Dosyası İndir
                 </button>
+                <button id="btnMergedExcelDownload" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
+                    Birleşik Excel İndir (2 Bölge)
+                </button>
                 <button id="btnSendMail" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
                     Mail Gönder
                 </button>
@@ -1102,6 +1105,154 @@
 
             XLSX.utils.book_append_sheet(workbook, worksheet, "Talepler");
             XLSX.writeFile(workbook, `Kampanya_Talepleri_${REGIONS[currentRegionKey].label.replace(/\s+/g,'_')}.xlsx`);
+        });
+
+        document.getElementById('btnMergedExcelDownload').addEventListener('click', async () => {
+            const [mevlutSnap, yusufSnap] = await Promise.all([
+                get(ref(db, REGIONS.mevlut.campaignsPath)),
+                get(ref(db, REGIONS.yusuf.campaignsPath))
+            ]);
+            const regionsData = [
+                { key: 'mevlut', snap: mevlutSnap },
+                { key: 'yusuf', snap: yusufSnap }
+            ];
+
+            const worksheetData = [];
+            worksheetData.push(["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"]);
+            const sectionHeaderRows = [];
+            const byCodeDesc = (a, b) => String(b || "").localeCompare(String(a || ""), undefined, { numeric: true, sensitivity: 'base' });
+
+            // ORTAK KAMPANYALAR — her bölge için ayrı ayrı (admin'in çoklu mağaza seçerek girdiği kayıtlar)
+            regionsData.forEach(({ key, snap }) => {
+                const rawData = snap.val();
+                if (!rawData) return;
+                const baseCount = REGIONS[key].baseStores.length;
+                const multiDocs = [];
+                Object.keys(rawData).forEach(k => {
+                    const d = { id: k, ...rawData[k] };
+                    if (Array.isArray(d.storeName) && d.storeName.length > 1) multiDocs.push(d);
+                });
+                if (multiDocs.length === 0) return;
+                multiDocs.sort((a, b) => (a.createdAt || a.timestamp || 0) - (b.createdAt || b.timestamp || 0));
+                sectionHeaderRows.push(worksheetData.length);
+                worksheetData.push([`ORTAK KAMPANYALAR — ${REGIONS[key].label}`, "", "", "", "", "", ""]);
+                multiDocs.forEach(d => {
+                    const storeCount = d.storeName.length;
+                    const label = (baseCount > 0 && storeCount >= baseCount) ? "Tüm Mağazalar" : d.storeName.join(', ');
+                    const cleanRatio = d.ratio ? d.ratio.replace('%', '') + '%' : '';
+                    worksheetData.push([label, d.code, d.name, Number(d.quantity), Number(d.normalPrice), Number(d.discountPrice), cleanRatio]);
+                });
+                worksheetData.push([]);
+            });
+
+            // İki bölgenin tüm tekil mağaza girişlerini tek havuzda topla
+            let allSingleDocs = [];
+            regionsData.forEach(({ key, snap }) => {
+                const rawData = snap.val();
+                if (!rawData) return;
+                Object.keys(rawData).forEach(k => {
+                    const d = { id: k, region: key, ...rawData[k] };
+                    if (!(Array.isArray(d.storeName) && d.storeName.length > 1)) {
+                        const clean = { ...d };
+                        if (Array.isArray(clean.storeName)) clean.storeName = clean.storeName[0] || "Bilinmeyen Mağaza";
+                        allSingleDocs.push(clean);
+                    }
+                });
+            });
+
+            // Ürün koduna göre gruplama — BÖLGE FARK ETMEKSİZİN. Örn: Mevlüt Bilir'den 2 mağaza +
+            // Yusuf Yıldız'dan 1 mağaza = toplam 3, bu da birleştirme eşiğini (2'den fazla) geçer.
+            const productGroups = {};
+            allSingleDocs.forEach(d => {
+                const key = (d.code || d.name || 'kod-yok').toString().trim().toUpperCase();
+                if (!productGroups[key]) productGroups[key] = [];
+                productGroups[key].push(d);
+            });
+
+            const mergedKeys = Object.keys(productGroups).filter(k => productGroups[k].length > 2);
+            const soloDocs = [];
+            Object.keys(productGroups).filter(k => productGroups[k].length <= 2).forEach(k => {
+                productGroups[k].forEach(d => soloDocs.push(d));
+            });
+
+            if (mergedKeys.length > 0) {
+                mergedKeys.sort((a, b) => byCodeDesc(productGroups[a][0].code, productGroups[b][0].code));
+                sectionHeaderRows.push(worksheetData.length);
+                worksheetData.push(["AYNI ÜRÜNE BİRDEN FAZLA MAĞAZA TALEBİ (HER İKİ BÖLGE)", "", "", "", "", "", ""]);
+                mergedKeys.forEach(key => {
+                    const entries = productGroups[key];
+                    const summary = summarizeGroup(entries);
+                    const storeNames = entries.map(e => e.storeName).join(', ');
+                    const cleanRatio = summary.ratio ? summary.ratio.replace('%', '') + '%' : '';
+                    worksheetData.push([storeNames, entries[0].code, entries[0].name, summary.totalQty, summary.normalPrice, summary.discountPrice, cleanRatio]);
+                });
+            }
+
+            if (mergedKeys.length > 0 && soloDocs.length > 0) {
+                worksheetData.push([]);
+                worksheetData.push([]);
+            }
+
+            // Kalan tekil kampanyalar — önce bölge bölge ayrılır, her bölge içinde eski mantık:
+            // mağaza bloğu + kod büyükten küçüğe.
+            ['mevlut', 'yusuf'].forEach(regionKey => {
+                const regionSolo = soloDocs.filter(d => d.region === regionKey);
+                if (regionSolo.length === 0) return;
+
+                sectionHeaderRows.push(worksheetData.length);
+                worksheetData.push([`${REGIONS[regionKey].label.toUpperCase()} MAĞAZALARI`, "", "", "", "", "", ""]);
+
+                regionSolo.forEach(d => { d.sortName = d.storeName; });
+                regionSolo.sort((a, b) => {
+                    const storeCompare = a.sortName.localeCompare(b.sortName);
+                    if (storeCompare !== 0) return storeCompare;
+                    return byCodeDesc(a.code, b.code);
+                });
+
+                let lastStore = "";
+                regionSolo.forEach(d => {
+                    if (lastStore !== "" && lastStore !== d.sortName) {
+                        worksheetData.push([]);
+                        worksheetData.push([]);
+                    }
+                    const isFirst = (lastStore !== d.sortName);
+                    const cleanRatio = d.ratio ? d.ratio.replace('%', '') + '%' : '';
+                    worksheetData.push([
+                        isFirst ? d.sortName : "",
+                        d.code, d.name,
+                        Number(d.quantity), Number(d.normalPrice), Number(d.discountPrice),
+                        cleanRatio
+                    ]);
+                    lastStore = d.sortName;
+                });
+                worksheetData.push([]);
+            });
+
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+            for (let r = range.s.r; r <= range.e.r; r++) {
+                const cellRef = XLSX.utils.encode_cell({ r: r, c: 6 });
+                if (worksheet[cellRef]) {
+                    if (!worksheet[cellRef].s) worksheet[cellRef].s = {};
+                    worksheet[cellRef].s.alignment = { horizontal: "right" };
+                }
+            }
+            sectionHeaderRows.forEach(r => {
+                const cellRef = XLSX.utils.encode_cell({ r: r, c: 0 });
+                if (worksheet[cellRef]) {
+                    if (!worksheet[cellRef].s) worksheet[cellRef].s = {};
+                    worksheet[cellRef].s.font = { bold: true };
+                }
+            });
+
+            worksheet['!cols'] = [
+                { wch: 32 }, { wch: 15 }, { wch: 22 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 10 }
+            ];
+
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Talepler");
+            XLSX.writeFile(workbook, `Kampanya_Talepleri_Birlesik_Tum_Bolgeler.xlsx`);
         });
 
         document.getElementById('btnSendMail').addEventListener('click', async () => {
