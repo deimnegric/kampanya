@@ -38,16 +38,29 @@
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-slate-100">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Kampanya Talep</h2>
-                <p class="text-sm text-slate-500 mt-1">Devam etmek için lütfen giriş yapın</p>
+                <p id="loginSubtitle" class="text-sm text-slate-500 mt-1">Devam etmek için giriş tipini seçin</p>
             </div>
-            <div class="space-y-4">
+
+            <!-- ADIM 0: Giriş tipi seçimi -->
+            <div id="loginModeSelect" class="grid grid-cols-2 gap-3">
+                <button type="button" id="btnModeStore" class="flex flex-col items-center justify-center gap-1 py-6 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-2xl text-blue-700 font-semibold text-sm transition-colors cursor-pointer">
+                    <span>Mağaza Girişi</span>
+                    <span class="text-[10px] font-normal text-blue-500">MS / MSY / Temsilci</span>
+                </button>
+                <button type="button" id="btnModeAdmin" class="flex flex-col items-center justify-center gap-1 py-6 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-slate-700 font-semibold text-sm transition-colors cursor-pointer">
+                    <span>Yönetici Girişi</span>
+                    <span class="text-[10px] font-normal text-slate-400">Bölge Sorumlusu</span>
+                </button>
+            </div>
+
+            <!-- ADIM 1a: Mağaza girişi -->
+            <div id="loginStoreFlow" class="hidden space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Giriş Tipi</label>
                     <select id="loginType" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         <option value="MS">MS (Mağaza Sorumlusu)</option>
                         <option value="MSY">MSY (Mağaza Sorumlu Yardımcısı)</option>
                         <option value="Günlük Temsilci">Günlük Temsilci</option>
-                        <option value="admin">Bölge Sorumlusu (Yönetici)</option>
                     </select>
                 </div>
                 <div id="storeNameArea">
@@ -65,16 +78,30 @@
                     </select>
                     <p id="regionAutoHint" class="text-[10px] text-slate-400 mt-1">Mağaza adınızı yazınca bölgeniz otomatik seçilir.</p>
                 </div>
-                <div id="adminKeyArea" class="hidden">
+                <button type="button" id="btnStoreEnter" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition-colors shadow-sm cursor-pointer">
+                    Sisteme Giriş Yap
+                </button>
+                <button type="button" id="btnBackFromStore" class="w-full text-center text-xs text-slate-400 hover:text-slate-600 cursor-pointer">&larr; Geri</button>
+            </div>
+
+            <!-- ADIM 1b: Yönetici şifre girişi -->
+            <div id="loginAdminPassFlow" class="hidden space-y-4">
+                <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Yönetici Giriş Kodu</label>
                     <input type="password" id="loginAdminKey" maxlength="4" placeholder="••••" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                 </div>
-                <button id="btnEnterSystem" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition-colors shadow-sm cursor-pointer">
-                    Sisteme Giriş Yap
-                </button>
+                <button type="button" id="btnBackFromAdminPass" class="w-full text-center text-xs text-slate-400 hover:text-slate-600 cursor-pointer">&larr; Geri</button>
+            </div>
+
+            <!-- ADIM 2: Yönetici bölge (BS) seçimi -->
+            <div id="loginAdminRegionFlow" class="hidden space-y-3">
+                <p class="text-xs text-slate-500">Bölgenizi seçin, en üstteki daha önce kullandığınız bölgedir.</p>
+                <div id="adminRegionButtons" class="space-y-2"></div>
+                <button type="button" id="btnBackFromAdminRegion" class="w-full text-center text-xs text-slate-400 hover:text-slate-600 cursor-pointer">&larr; Geri</button>
             </div>
         </div>
     </div>
+
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
@@ -321,14 +348,24 @@
         let expandedGroups = new Set();
 
         const loginModal = document.getElementById('loginModal');
+        const loginSubtitle = document.getElementById('loginSubtitle');
+        const loginModeSelect = document.getElementById('loginModeSelect');
+        const btnModeStore = document.getElementById('btnModeStore');
+        const btnModeAdmin = document.getElementById('btnModeAdmin');
+        const loginStoreFlow = document.getElementById('loginStoreFlow');
+        const loginAdminPassFlow = document.getElementById('loginAdminPassFlow');
+        const loginAdminRegionFlow = document.getElementById('loginAdminRegionFlow');
+        const adminRegionButtons = document.getElementById('adminRegionButtons');
+        const btnBackFromStore = document.getElementById('btnBackFromStore');
+        const btnBackFromAdminPass = document.getElementById('btnBackFromAdminPass');
+        const btnBackFromAdminRegion = document.getElementById('btnBackFromAdminRegion');
         const loginType = document.getElementById('loginType');
         const loginRegion = document.getElementById('loginRegion');
         const regionAutoHint = document.getElementById('regionAutoHint');
         const storeNameArea = document.getElementById('storeNameArea');
-        const adminKeyArea = document.getElementById('adminKeyArea');
         const loginStoreName = document.getElementById('loginStoreName');
         const loginAdminKey = document.getElementById('loginAdminKey');
-        const btnEnterSystem = document.getElementById('btnEnterSystem');
+        const btnStoreEnter = document.getElementById('btnStoreEnter');
         const currentSessionBadge = document.getElementById('currentSessionBadge');
         const regionBadge = document.getElementById('regionBadge');
         const adminControls = document.getElementById('adminControls');
@@ -491,22 +528,63 @@
             handleStoreNameAutoRegion();
         });
 
-        loginType.addEventListener('change', (e) => {
-            if (e.target.value === 'admin') {
-                storeNameArea.classList.add('hidden');
-                adminKeyArea.classList.remove('hidden');
-                loginAdminKey.focus();
-            } else {
-                storeNameArea.classList.remove('hidden');
-                adminKeyArea.classList.add('hidden');
-            }
+        function showLoginStep(step) {
+            loginModeSelect.classList.toggle('hidden', step !== 'mode');
+            loginStoreFlow.classList.toggle('hidden', step !== 'store');
+            loginAdminPassFlow.classList.toggle('hidden', step !== 'adminPass');
+            loginAdminRegionFlow.classList.toggle('hidden', step !== 'adminRegion');
+            const subtitles = {
+                mode: 'Devam etmek için giriş tipini seçin',
+                store: 'Mağaza adınızı ve göreviniz seçin',
+                adminPass: 'Yönetici giriş kodunuzu girin',
+                adminRegion: 'Yönetmek istediğiniz bölgeyi seçin'
+            };
+            loginSubtitle.textContent = subtitles[step] || '';
+        }
+
+        btnModeStore.addEventListener('click', () => showLoginStep('store'));
+
+        btnModeAdmin.addEventListener('click', () => {
+            loginAdminKey.value = "";
+            showLoginStep('adminPass');
+            loginAdminKey.focus();
         });
+
+        btnBackFromStore.addEventListener('click', () => showLoginStep('mode'));
+        btnBackFromAdminPass.addEventListener('click', () => showLoginStep('mode'));
+        btnBackFromAdminRegion.addEventListener('click', () => showLoginStep('mode'));
+
+        function renderAdminRegionButtons() {
+            const lastUsed = localStorage.getItem('lastAdminRegion');
+            const keys = Object.keys(REGIONS);
+            // Daha önce kullanılan bölge listenin en başına alınır ("kendi bölgesi önce görünsün").
+            if (lastUsed && REGIONS[lastUsed]) {
+                keys.sort((a, b) => (a === lastUsed ? -1 : b === lastUsed ? 1 : 0));
+            }
+            adminRegionButtons.innerHTML = keys.map((k, idx) => {
+                const isOwn = (k === lastUsed) || (!lastUsed && idx === 0);
+                return `
+                    <button type="button" data-region="${k}" class="w-full flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-semibold transition-colors cursor-pointer ${isOwn ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}">
+                        <span>${REGIONS[k].label}</span>
+                        ${isOwn ? '<span class="text-[10px] font-medium text-blue-500 uppercase tracking-wide">Bölgeniz</span>' : ''}
+                    </button>
+                `;
+            }).join('');
+            adminRegionButtons.querySelectorAll('button[data-region]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const key = btn.getAttribute('data-region');
+                    localStorage.setItem('lastAdminRegion', key);
+                    executeAdminLogin(key);
+                });
+            });
+        }
 
         loginAdminKey.addEventListener('input', (e) => {
             const currentPass = e.target.value.trim();
             if (currentPass.length === 4) {
                 if (currentPass === '9553') {
-                    executeAdminLogin();
+                    renderAdminRegionButtons();
+                    showLoginStep('adminRegion');
                 } else {
                     alert('Hatalı Yönetici Kodu!');
                     e.target.value = ""; 
@@ -514,37 +592,27 @@
             }
         });
 
-        btnEnterSystem.addEventListener('click', () => {
-            if (loginType.value !== 'admin') {
-                let storeName = loginStoreName.value.trim();
-                if (!storeName) return alert('Lütfen mağaza adınızı yazın!');
-                if(storeName.toLowerCase().startsWith("atatürk")) storeName = "Atatürk Cd.";
+        btnStoreEnter.addEventListener('click', () => {
+            let storeName = loginStoreName.value.trim();
+            if (!storeName) return alert('Lütfen mağaza adınızı yazın!');
+            if(storeName.toLowerCase().startsWith("atatürk")) storeName = "Atatürk Cd.";
 
-                // Bilinen bir mağazaysa bölge otomatik tespit edilenden alınır (elle seçim yok sayılır).
-                // Bilinmeyen bir mağazaysa kullanıcının elle seçtiği bölgeye güvenilir.
-                const detectedRegion = findRegionKeyForStore(storeName);
-                currentRegionKey = detectedRegion || loginRegion.value;
-                homeRegionKey = currentRegionKey;
-                campaignRef = ref(db, REGIONS[currentRegionKey].campaignsPath);
-                systemRef = ref(db, REGIONS[currentRegionKey].systemPath);
-                currentUser = { type: loginType.value, name: storeName };
-                currentSessionBadge.textContent = `${loginType.value} (${storeName})`;
-                adminStoreSelectArea.classList.add('hidden');
-                loginModal.classList.add('hidden');
-                updateRegionUI();
-                initLiveSync();
-            } else {
-                const adminKey = loginAdminKey.value.trim();
-                if (adminKey === '9553') {
-                    executeAdminLogin();
-                } else {
-                    alert('Hatalı Yönetici Kodu!');
-                }
-            }
+            // Bilinen bir mağazaysa bölge otomatik tespit edilenden alınır (elle seçim yok sayılır).
+            // Bilinmeyen bir mağazaysa kullanıcının elle seçtiği bölgeye güvenilir.
+            const detectedRegion = findRegionKeyForStore(storeName);
+            currentRegionKey = detectedRegion || loginRegion.value;
+            homeRegionKey = currentRegionKey;
+            campaignRef = ref(db, REGIONS[currentRegionKey].campaignsPath);
+            systemRef = ref(db, REGIONS[currentRegionKey].systemPath);
+            currentUser = { type: loginType.value, name: storeName };
+            currentSessionBadge.textContent = `${loginType.value} (${storeName})`;
+            loginModal.classList.add('hidden');
+            updateRegionUI();
+            initLiveSync();
         });
 
-        function executeAdminLogin() {
-            currentRegionKey = loginRegion.value || 'mevlut';
+        function executeAdminLogin(regionKey) {
+            currentRegionKey = regionKey || 'mevlut';
             homeRegionKey = currentRegionKey;
             campaignRef = ref(db, REGIONS[currentRegionKey].campaignsPath);
             systemRef = ref(db, REGIONS[currentRegionKey].systemPath);
@@ -1406,4 +1474,3 @@
     </script>
 </body>
 </html>
-
