@@ -60,12 +60,14 @@
                     <select id="loginRegion" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-slate-100 disabled:text-slate-500">
                         <option value="mevlut">Mevlüt Bilir Bölgesi</option>
                         <option value="yusuf">Yusuf Yıldız Bölgesi</option>
+                        <option value="musa">Musa Arıcan Bölgesi</option>
+                        <option value="cemalettin">Cemalettin Eren Bölgesi</option>
                     </select>
                     <p id="regionAutoHint" class="text-[10px] text-slate-400 mt-1">Mağaza adınızı yazınca bölgeniz otomatik seçilir.</p>
                 </div>
                 <div id="adminKeyArea" class="hidden">
                     <label class="block text-sm font-medium text-slate-700 mb-1">Yönetici Giriş Kodu</label>
-                    <input type="password" id="loginAdminKey" maxlength="6" placeholder="•••••" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <input type="password" id="loginAdminKey" maxlength="4" placeholder="••••" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                 </div>
                 <button id="btnEnterSystem" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm transition-colors shadow-sm cursor-pointer">
                     Sisteme Giriş Yap
@@ -89,20 +91,24 @@
                         </p>
                     </div>
                 </div>
-                <button id="btnLogout" class="sm:ml-4 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl transition-colors border border-rose-200 flex items-center gap-1 cursor-pointer">
+                <div id="otherRegionsWrap" class="hidden relative sm:ml-2">
+                    <button id="btnOtherRegions" type="button" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer flex items-center gap-1">
+                        Diğer Bölgeler
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.65a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
+                    </button>
+                    <div id="otherRegionsMenu" class="hidden absolute left-0 sm:right-0 sm:left-auto mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-40"></div>
+                </div>
+                <button id="btnLogout" class="sm:ml-2 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl transition-colors border border-rose-200 flex items-center gap-1 cursor-pointer">
                     Çıkış Yap
                 </button>
             </div>
             
             <div id="adminControls" class="hidden flex flex-wrap items-center gap-2">
-                <button id="btnSwitchRegion" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
-                    Yusuf Yıldız Bölgesini Görüntüle
-                </button>
                 <button id="btnExcelDownload" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
                     Excel Dosyası İndir
                 </button>
                 <button id="btnMergedExcelDownload" class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
-                    Badi Excel Birleştir ve İndir
+                    Excel Birleştir
                 </button>
                 <button id="btnSendMail" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer">
                     Mail Gönder
@@ -113,12 +119,29 @@
             </div>
         </div>
 
+        <div id="mergeRegionModal" class="hidden fixed inset-0 bg-slate-900/60 blur-bg z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 border border-slate-100">
+                <h3 class="font-bold text-slate-900 mb-1">Excel Birleştir</h3>
+                <p class="text-xs text-slate-500 mb-3">Birleştirilecek bölgeleri seçin.</p>
+                <div id="mergeRegionCheckboxes" class="space-y-2 text-sm text-slate-700 mb-4"></div>
+                <div class="flex gap-2">
+                    <button id="btnMergeConfirm" type="button" class="flex-1 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold cursor-pointer transition-colors">Birleştir ve İndir</button>
+                    <button id="btnMergeCancel" type="button" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-semibold cursor-pointer transition-colors">İptal</button>
+                </div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             <div class="lg:col-span-1 bg-white rounded-2xl p-5 shadow-sm border border-slate-100 h-fit">
                 <div class="mb-4">
                     <h2 class="font-bold text-slate-900">Ürün Giriş Formu</h2>
                     <p class="text-xs text-slate-400 mt-0.5">Lütfen kampanya bilgilerini eksiksiz girin. Kampanya oranı en fazla %33 olabilir.</p>
+                </div>
+
+                <div id="viewOnlyNotice" class="hidden text-center py-8 px-2 text-sm text-slate-500 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p class="font-medium text-slate-600 mb-1">Sadece Görüntüleme Modu</p>
+                    <p class="text-xs text-slate-400">Bu bölgede kampanya ekleme/düzenleme yapamazsınız. Sadece o bölgenin BS'si müdahale edebilir.</p>
                 </div>
                 
                 <form id="campaignForm" class="space-y-3.5">
@@ -251,13 +274,31 @@
                 bgClass: 'bg-rose-50',
                 accentClass: 'text-rose-600',
                 baseStores: ["Çevreyolu", "Kalfalar", "Abdürreşit", "Yaylapınar", "Hasanköy", "Antalyayolu", "Kaş Caddesi", "Aymanas", "Uluğbey"]
+            },
+            musa: {
+                key: 'musa',
+                label: 'Musa Arıcan Bölgesi',
+                campaignsPath: 'campaigns_musa',
+                systemPath: 'systemControl_musa',
+                bgClass: 'bg-amber-50',
+                accentClass: 'text-amber-600',
+                baseStores: ["Uluırmak", "Hocalar", "Sarıyakup", "Mengene", "Kabasakal", "Kumköprü", "Çimenlik", "Çelebi", "Hamzaoğlu"]
+            },
+            cemalettin: {
+                key: 'cemalettin',
+                label: 'Cemalettin Eren Bölgesi',
+                campaignsPath: 'campaigns_cemalettin',
+                systemPath: 'systemControl_cemalettin',
+                bgClass: 'bg-violet-50',
+                accentClass: 'text-violet-600',
+                baseStores: ["Üçler", "Köprübaşı", "Cihangir", "Musalla", "Kalenderhane", "Kahraman", "Şems", "Nakipoğlu", "Hacı Hasan"]
             }
         };
 
         const ALL_REGION_BG_CLASSES = Object.values(REGIONS).map(r => r.bgClass);
 
         const storeSuggestionsList = document.getElementById('storeSuggestions');
-        const ALL_STORE_NAMES_FOR_SUGGESTIONS = [...REGIONS.mevlut.baseStores, ...REGIONS.yusuf.baseStores];
+        const ALL_STORE_NAMES_FOR_SUGGESTIONS = Object.values(REGIONS).flatMap(r => r.baseStores);
 
         let currentRegionKey = 'mevlut';
         let campaignRef = ref(db, REGIONS[currentRegionKey].campaignsPath);
@@ -267,6 +308,7 @@
         let lastRawData = null;
 
         let currentUser = { type: 'MS', name: '' };
+        let homeRegionKey = null; // kullanıcının giriş yaptığı asıl bölge; başka bölgeye geçince müdahale hakkı olmaz (admin hariç)
         let liveStoresList = []; 
         let isSystemLocked = false;
         let allSelectToggle = false; 
@@ -292,8 +334,15 @@
         const adminControls = document.getElementById('adminControls');
         const lockStatusBadge = document.getElementById('lockStatusBadge');
         const btnUnlockSystem = document.getElementById('btnUnlockSystem');
-        const btnSwitchRegion = document.getElementById('btnSwitchRegion');
+        const otherRegionsWrap = document.getElementById('otherRegionsWrap');
+        const btnOtherRegions = document.getElementById('btnOtherRegions');
+        const otherRegionsMenu = document.getElementById('otherRegionsMenu');
         const btnLogout = document.getElementById('btnLogout');
+        const mergeRegionModal = document.getElementById('mergeRegionModal');
+        const mergeRegionCheckboxes = document.getElementById('mergeRegionCheckboxes');
+        const btnMergeConfirm = document.getElementById('btnMergeConfirm');
+        const btnMergeCancel = document.getElementById('btnMergeCancel');
+        const viewOnlyNotice = document.getElementById('viewOnlyNotice');
         
         const adminStoreSelectArea = document.getElementById('adminStoreSelectArea');
         const adminStoreCheckboxGroup = document.getElementById('adminStoreCheckboxGroup');
@@ -362,21 +411,53 @@
             }
         }
 
+        // Admin olmayan bir kullanıcı kendi bölgesinin (homeRegionKey) dışında bir bölgeyi
+        // görüntülüyorsa true döner: bu durumda sadece izleyebilir, hiçbir şeye müdahale edemez.
+        // Sadece BS (admin) tüm bölgelere -kendi bölgesi dahil olmayanlara da- müdahale edebilir.
+        function isViewingForeignRegion() {
+            return currentUser.type !== 'admin' && homeRegionKey && currentRegionKey !== homeRegionKey;
+        }
+
+        function populateOtherRegionsMenu() {
+            if (!otherRegionsMenu) return;
+            const items = Object.keys(REGIONS).filter(k => k !== currentRegionKey);
+            otherRegionsMenu.innerHTML = items.map(k => `
+                <button type="button" data-region="${k}" class="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
+                    <span class="w-2 h-2 rounded-full ${REGIONS[k].accentClass.replace('text-', 'bg-')}"></span>
+                    ${REGIONS[k].label}
+                </button>
+            `).join('');
+            otherRegionsMenu.querySelectorAll('button[data-region]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    otherRegionsMenu.classList.add('hidden');
+                    switchRegion(btn.getAttribute('data-region'));
+                });
+            });
+        }
+
+        function updateFormVisibility() {
+            const foreign = isViewingForeignRegion();
+            if (viewOnlyNotice) viewOnlyNotice.classList.toggle('hidden', !foreign);
+            if (campaignForm) campaignForm.classList.toggle('hidden', foreign);
+        }
+
         function updateRegionUI() {
-            regionBadge.textContent = '• ' + REGIONS[currentRegionKey].label;
+            regionBadge.textContent = '• ' + REGIONS[currentRegionKey].label + (isViewingForeignRegion() ? ' (Görüntüleme Modu)' : '');
             regionBadge.className = `font-semibold ${REGIONS[currentRegionKey].accentClass}`;
 
             ALL_REGION_BG_CLASSES.forEach(c => document.body.classList.remove(c));
             document.body.classList.remove('bg-slate-50');
             document.body.classList.add(REGIONS[currentRegionKey].bgClass);
 
-            if (btnSwitchRegion) {
-                const otherKey = currentRegionKey === 'mevlut' ? 'yusuf' : 'mevlut';
-                btnSwitchRegion.textContent = `${REGIONS[otherKey].label}ni Görüntüle`;
-                btnSwitchRegion.classList.remove('region-switch-pulse');
+            if (otherRegionsWrap) otherRegionsWrap.classList.remove('hidden');
+            populateOtherRegionsMenu();
+            updateFormVisibility();
+
+            if (btnOtherRegions) {
+                btnOtherRegions.classList.remove('region-switch-pulse');
                 // reflow tetikleyip animasyonu her seferinde yeniden oynatmak için
-                void btnSwitchRegion.offsetWidth;
-                btnSwitchRegion.classList.add('region-switch-pulse');
+                void btnOtherRegions.offsetWidth;
+                btnOtherRegions.classList.add('region-switch-pulse');
             }
         }
 
@@ -393,10 +474,15 @@
             initLiveSync();
         }
 
-        if (btnSwitchRegion) {
-            btnSwitchRegion.addEventListener('click', () => {
-                const newRegion = currentRegionKey === 'mevlut' ? 'yusuf' : 'mevlut';
-                switchRegion(newRegion);
+        if (btnOtherRegions) {
+            btnOtherRegions.addEventListener('click', (e) => {
+                e.stopPropagation();
+                otherRegionsMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (otherRegionsMenu && !otherRegionsMenu.classList.contains('hidden') && !otherRegionsWrap.contains(e.target)) {
+                    otherRegionsMenu.classList.add('hidden');
+                }
             });
         }
 
@@ -418,8 +504,8 @@
 
         loginAdminKey.addEventListener('input', (e) => {
             const currentPass = e.target.value.trim();
-            if (currentPass.length === 6) {
-                if (currentPass === '161225') {
+            if (currentPass.length === 4) {
+                if (currentPass === '9553') {
                     executeAdminLogin();
                 } else {
                     alert('Hatalı Yönetici Kodu!');
@@ -438,6 +524,7 @@
                 // Bilinmeyen bir mağazaysa kullanıcının elle seçtiği bölgeye güvenilir.
                 const detectedRegion = findRegionKeyForStore(storeName);
                 currentRegionKey = detectedRegion || loginRegion.value;
+                homeRegionKey = currentRegionKey;
                 campaignRef = ref(db, REGIONS[currentRegionKey].campaignsPath);
                 systemRef = ref(db, REGIONS[currentRegionKey].systemPath);
                 currentUser = { type: loginType.value, name: storeName };
@@ -448,7 +535,7 @@
                 initLiveSync();
             } else {
                 const adminKey = loginAdminKey.value.trim();
-                if (adminKey === '161225') {
+                if (adminKey === '9553') {
                     executeAdminLogin();
                 } else {
                     alert('Hatalı Yönetici Kodu!');
@@ -458,6 +545,7 @@
 
         function executeAdminLogin() {
             currentRegionKey = loginRegion.value || 'mevlut';
+            homeRegionKey = currentRegionKey;
             campaignRef = ref(db, REGIONS[currentRegionKey].campaignsPath);
             systemRef = ref(db, REGIONS[currentRegionKey].systemPath);
             currentUser = { type: 'admin', name: 'Bölge Sorumlusu' };
@@ -737,7 +825,7 @@
 
                 if (isExpanded) {
                     entries.forEach(data => {
-                        const isOwner = currentUser.type === 'admin' || currentUser.name === data.storeName;
+                        const isOwner = currentUser.type === 'admin' || (!isViewingForeignRegion() && currentUser.name === data.storeName);
                         const canEdit = isOwner && !isSystemLocked;
                         const isEditing = editingId === data.id;
                         const colorClass = getStoreColorClass(data.storeName);
@@ -777,7 +865,7 @@
                 const colorClass = getStoreColorClass(storeName);
 
                 items.forEach((data, idx) => {
-                    const isOwner = currentUser.type === 'admin' || currentUser.name === data.storeName;
+                    const isOwner = currentUser.type === 'admin' || (!isViewingForeignRegion() && currentUser.name === data.storeName);
                     const canEdit = isOwner && !isSystemLocked;
                     const isEditing = editingId === data.id;
                     const storeCellHtml = idx === 0
@@ -828,6 +916,7 @@
         campaignForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (isSystemLocked && currentUser.type !== 'admin') return alert('Sistem kilitli!');
+            if (isViewingForeignRegion()) return alert('Bu bölgede sadece görüntüleme yapabilirsiniz, kampanya ekleyemezsiniz.');
 
             const inputProductCode = productCodeInput.value.trim();
             const normP = parseFloat(String(normalPriceInput.value).replace(',', '.'));
@@ -1107,15 +1196,33 @@
             XLSX.writeFile(workbook, `Kampanya_Talepleri_${REGIONS[currentRegionKey].label.replace(/\s+/g,'_')}.xlsx`);
         });
 
-        document.getElementById('btnMergedExcelDownload').addEventListener('click', async () => {
-            const [mevlutSnap, yusufSnap] = await Promise.all([
-                get(ref(db, REGIONS.mevlut.campaignsPath)),
-                get(ref(db, REGIONS.yusuf.campaignsPath))
-            ]);
-            const regionsData = [
-                { key: 'mevlut', snap: mevlutSnap },
-                { key: 'yusuf', snap: yusufSnap }
-            ];
+        document.getElementById('btnMergedExcelDownload').addEventListener('click', () => {
+            if (!mergeRegionCheckboxes) return;
+            mergeRegionCheckboxes.innerHTML = Object.keys(REGIONS).map(k => `
+                <label class="flex items-center gap-2 py-1 px-1 hover:bg-slate-50 rounded-lg cursor-pointer">
+                    <input type="checkbox" value="${k}" checked class="merge-region-cb w-4 h-4 rounded text-violet-600 border-slate-300 focus:ring-violet-500 cursor-pointer">
+                    <span>${REGIONS[k].label}</span>
+                </label>
+            `).join('');
+            mergeRegionModal.classList.remove('hidden');
+        });
+
+        if (btnMergeCancel) {
+            btnMergeCancel.addEventListener('click', () => mergeRegionModal.classList.add('hidden'));
+        }
+
+        if (btnMergeConfirm) {
+            btnMergeConfirm.addEventListener('click', async () => {
+                const selectedKeys = Array.from(mergeRegionCheckboxes.querySelectorAll('.merge-region-cb:checked')).map(cb => cb.value);
+                if (selectedKeys.length === 0) return alert('Lütfen en az bir bölge seçin!');
+                mergeRegionModal.classList.add('hidden');
+                await runMergedExcelExport(selectedKeys);
+            });
+        }
+
+        async function runMergedExcelExport(selectedKeys) {
+            const snaps = await Promise.all(selectedKeys.map(k => get(ref(db, REGIONS[k].campaignsPath))));
+            const regionsData = selectedKeys.map((key, i) => ({ key, snap: snaps[i] }));
 
             const worksheetData = [];
             worksheetData.push(["Mağaza Adı", "Ürün Kodu", "Ürün Adı", "Adet", "Fiyat", "Kamp. Fiyat", "Oran"]);
@@ -1178,7 +1285,7 @@
             if (mergedKeys.length > 0) {
                 mergedKeys.sort((a, b) => byCodeDesc(productGroups[a][0].code, productGroups[b][0].code));
                 sectionHeaderRows.push(worksheetData.length);
-                worksheetData.push(["AYNI ÜRÜNE BİRDEN FAZLA MAĞAZA TALEBİ (HER İKİ BÖLGE)", "", "", "", "", "", ""]);
+                worksheetData.push(["AYNI ÜRÜNE BİRDEN FAZLA MAĞAZA TALEBİ (SEÇİLİ BÖLGELER)", "", "", "", "", "", ""]);
                 mergedKeys.forEach(key => {
                     const entries = productGroups[key];
                     const summary = summarizeGroup(entries);
@@ -1195,7 +1302,7 @@
 
             // Kalan tekil kampanyalar — önce bölge bölge ayrılır, her bölge içinde eski mantık:
             // mağaza bloğu + kod büyükten küçüğe.
-            ['mevlut', 'yusuf'].forEach(regionKey => {
+            selectedKeys.forEach(regionKey => {
                 const regionSolo = soloDocs.filter(d => d.region === regionKey);
                 if (regionSolo.length === 0) return;
 
@@ -1252,8 +1359,9 @@
             ];
 
             XLSX.utils.book_append_sheet(workbook, worksheet, "Talepler");
-            XLSX.writeFile(workbook, `Kampanya_Talepleri_Birlesik_Tum_Bolgeler.xlsx`);
-        });
+            const fileSuffix = selectedKeys.map(k => REGIONS[k].label.replace(/\s+/g, '_')).join('-');
+            XLSX.writeFile(workbook, `Kampanya_Talepleri_Birlesik_${fileSuffix}.xlsx`);
+        }
 
         document.getElementById('btnSendMail').addEventListener('click', async () => {
             if (confirm('Kampanyayı kilitleyip Mail şablonunu açmak istiyor musunuz?')) {
@@ -1298,3 +1406,4 @@
     </script>
 </body>
 </html>
+
